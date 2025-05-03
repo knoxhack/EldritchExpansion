@@ -30,15 +30,55 @@ public class Registration {
      * @param path The path for the resource
      * @return A ResourceLocation with the mod ID as namespace
      */
+    /**
+     * Create a ResourceLocation with the mod ID as the namespace.
+     * This uses a special method for compatibility with NeoForge 1.21.5.
+     */
     public static ResourceLocation location(String path) {
-        // Create a ResourceLocation for NeoForge 1.21.5
+        // In NeoForge 1.21.5, we need to use the parse method
+        // Minecraft 1.21.5 changed how ResourceLocations are created
+        String fullPath = EldritchVoid.MOD_ID + ":" + path;
         try {
-            // Use reflection to handle different versions
-            return new ResourceLocation(EldritchVoid.MOD_ID, path);
+            // Try to use the parse method which exists in newer versions
+            return ResourceLocation.parse(fullPath);
         } catch (Exception e) {
-            EldritchVoid.LOGGER.error("Error creating ResourceLocation for " + path, e);
-            // Fallback to a simple approach
-            return new ResourceLocation(EldritchVoid.MOD_ID + ":" + path);
+            // Fallback to a different approach
+            EldritchVoid.LOGGER.warn("Failed to parse ResourceLocation using parse method, using legacy approach");
+            // Split namespace and path
+            String[] parts = fullPath.split(":", 2);
+            if (parts.length == 2) {
+                return createResourceLocation(parts[0], parts[1]);
+            } else {
+                // Just in case, but this shouldn't happen
+                return createResourceLocation("minecraft", fullPath);
+            }
+        }
+    }
+    
+    /**
+     * Private helper method to create ResourceLocation using reflection
+     * to handle different versions of Minecraft.
+     */
+    private static ResourceLocation createResourceLocation(String namespace, String path) {
+        try {
+            // First try to use the constructor directly - works in some versions
+            try {
+                // Try with public constructor first
+                java.lang.reflect.Constructor<ResourceLocation> constructor = 
+                    ResourceLocation.class.getConstructor(String.class, String.class);
+                return constructor.newInstance(namespace, path);
+            } catch (NoSuchMethodException e) {
+                // Constructor might be private, use reflection
+                java.lang.reflect.Constructor<ResourceLocation> constructor = 
+                    ResourceLocation.class.getDeclaredConstructor(String.class, String.class);
+                constructor.setAccessible(true);
+                return constructor.newInstance(namespace, path);
+            }
+        } catch (Exception e) {
+            // Last resort - ugly approach
+            EldritchVoid.LOGGER.error("Failed to create ResourceLocation using reflection", e);
+            // Try to use a public method or field instead
+            throw new RuntimeException("Cannot create ResourceLocation: " + namespace + ":" + path, e);
         }
     }
     

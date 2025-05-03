@@ -2,6 +2,8 @@ package com.eldritchvoid.modules.obsidianconstructs;
 
 import com.eldritchvoid.EldritchVoid;
 import com.eldritchvoid.core.registry.Registration;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -26,16 +28,20 @@ public class ObsidianConstructsEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<Monster>> OBSIDIAN_GOLEM = Registration.ENTITIES.register(
             "obsidian_golem", 
             () -> {
-                // Properly create the EntityType using a ResourceKey instead of ResourceLocation
-                ResourceKey<EntityType<?>> resourceKey = ResourceKey.create(
-                    net.minecraft.core.registries.Registries.ENTITY_TYPE, 
-                    Registration.location("obsidian_golem")
-                );
+                // In NeoForge 1.21.5, we use a slightly different approach for entity registration
+                // We create a string ID for the entity
+                String entityId = EldritchVoid.MOD_ID + ":obsidian_golem";
                 
-                return (EntityType<Monster>)EntityType.Builder.of((type, level) -> null, MobCategory.MONSTER)
+                // Create a Builder with the entity factory (null for now, will be implemented later)
+                EntityType.Builder<Entity> builder = EntityType.Builder.of((type, level) -> null, MobCategory.MONSTER)
                         .sized(1.4F, 2.7F)
-                        .clientTrackingRange(10)
-                        .build(resourceKey.location().toString());
+                        .clientTrackingRange(10);
+                
+                // Build the entity type with the string ID
+                @SuppressWarnings("unchecked")
+                EntityType<Monster> entityType = (EntityType<Monster>) builder.build(entityId);
+                
+                return entityType;
             });
     
     /**

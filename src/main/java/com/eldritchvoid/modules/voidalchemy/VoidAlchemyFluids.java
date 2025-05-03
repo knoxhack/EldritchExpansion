@@ -38,14 +38,21 @@ public class VoidAlchemyFluids {
     public static final DeferredHolder<Fluid, FlowingFluid> FLOWING_VOID_ESSENCE = FLUIDS.register(
             "flowing_void_essence", () -> new BaseFlowingFluid.Flowing(VoidAlchemyFluids.voidEssenceProperties()));
     
-    // Void Essence Bucket - using proper parameter for NeoForge 1.21.5
+    // Void Essence Bucket - compatible with NeoForge 1.21.5
     public static final DeferredHolder<Item, Item> VOID_ESSENCE_BUCKET = Registration.ITEMS.register(
-            "void_essence_bucket", () -> new BucketItem(
-                    // Simply pass a supplier that returns the fluid
-                    () -> VOID_ESSENCE.get(), 
+            "void_essence_bucket", () -> {
+                // Create a supplier that provides the fluid
+                java.util.function.Supplier<? extends net.minecraft.world.level.material.Fluid> fluidSupplier = 
+                    () -> VOID_ESSENCE.get();
+                
+                // Create the bucket with the supplier
+                return new BucketItem(
+                    fluidSupplier,
                     new Item.Properties()
                         .craftRemainder(Items.BUCKET)
-                        .stacksTo(1)));
+                        .stacksTo(1)
+                );
+            });
     
     /**
      * Properties for the Void Essence fluid.
