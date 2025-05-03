@@ -69,6 +69,9 @@ public class EldritchVoid {
         moduleManager.registerModule(new com.eldritchvoid.modules.voidalchemy.VoidAlchemyModule(modEventBus));
         moduleManager.registerModule(new com.eldritchvoid.modules.eldritchartifacts.EldritchArtifactsModule(modEventBus));
         moduleManager.registerModule(new com.eldritchvoid.modules.obsidianforgemaster.ObsidianForgemasterModule(modEventBus));
+        moduleManager.registerModule(new com.eldritchvoid.modules.voidcorruption.VoidCorruptionModule(modEventBus));
+        moduleManager.registerModule(new com.eldritchvoid.modules.eldritcharcana.EldritchArcanaModule(modEventBus));
+        moduleManager.registerModule(new com.eldritchvoid.modules.obsidianconstructs.ObsidianConstructsModule(modEventBus));
         
         // Initialize all registered modules
         moduleManager.initializeModules();

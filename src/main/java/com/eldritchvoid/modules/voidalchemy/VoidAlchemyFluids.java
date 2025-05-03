@@ -29,15 +29,16 @@ public class VoidAlchemyFluids {
     private final ModuleRegistry<Fluid> fluidRegistry;
     private final ModuleRegistry<Item> itemRegistry;
     
+    // In NeoForge 1.21.5, the deferred holder typing has changed
     // Void Essence fluid
-    public final DeferredHolder<Fluid, BaseFlowingFluid.Source> VOID_ESSENCE_SOURCE;
-    public final DeferredHolder<Fluid, BaseFlowingFluid.Flowing> VOID_ESSENCE_FLOWING;
-    public final DeferredHolder<Item, BucketItem> VOID_ESSENCE_BUCKET;
+    public final DeferredHolder<Fluid, Fluid> VOID_ESSENCE_SOURCE;
+    public final DeferredHolder<Fluid, Fluid> VOID_ESSENCE_FLOWING;
+    public final DeferredHolder<Item, Item> VOID_ESSENCE_BUCKET;
     
     // Void Pee fluid (humorous alchemical reagent)
-    public final DeferredHolder<Fluid, BaseFlowingFluid.Source> VOID_PEE_SOURCE;
-    public final DeferredHolder<Fluid, BaseFlowingFluid.Flowing> VOID_PEE_FLOWING;
-    public final DeferredHolder<Item, BucketItem> VOID_PEE_BUCKET;
+    public final DeferredHolder<Fluid, Fluid> VOID_PEE_SOURCE;
+    public final DeferredHolder<Fluid, Fluid> VOID_PEE_FLOWING;
+    public final DeferredHolder<Item, Item> VOID_PEE_BUCKET;
     
     /**
      * Create a new fluids component for the Void Alchemy module.
@@ -46,40 +47,64 @@ public class VoidAlchemyFluids {
      */
     public VoidAlchemyFluids(String moduleName) {
         this.moduleName = moduleName;
-        this.fluidRegistry = Registration.getOrCreateModuleRegistry(moduleName, "Fluids", Registry.FLUID_REGISTRY);
+        // In NeoForge 1.21.5, registry keys have changed
+        this.fluidRegistry = Registration.getOrCreateModuleRegistry(moduleName, "Fluids", net.neoforged.neoforge.registries.BuiltInRegistries.Fluid_REGISTRY);
         this.itemRegistry = Registration.getItemRegistry(moduleName);
         
-        // Register Void Essence fluid
+        // In NeoForge 1.21.5, we need to modify how we handle fluid registration
+        
+        // First register our holders
+        VOID_ESSENCE_SOURCE = fluidRegistry.register(moduleName, "void_essence", 
+            () -> new BaseFlowingFluid.Source(null)); // Temporary null properties
+        
+        VOID_ESSENCE_FLOWING = fluidRegistry.register(moduleName, "flowing_void_essence", 
+            () -> new BaseFlowingFluid.Flowing(null)); // Temporary null properties
+        
+        VOID_ESSENCE_BUCKET = itemRegistry.register(moduleName, "void_essence_bucket", 
+            () -> new BucketItem(() -> VOID_ESSENCE_SOURCE.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
+            
+        // Now create the properties with the registered fluids
         BaseFlowingFluid.Properties voidEssenceProperties = new BaseFlowingFluid.Properties(
-            createVoidEssenceFluidType(),
+            () -> createVoidEssenceFluidType(),
             () -> this.VOID_ESSENCE_SOURCE.get(),
             () -> this.VOID_ESSENCE_FLOWING.get()
         ).bucket(() -> this.VOID_ESSENCE_BUCKET.get());
         
-        VOID_ESSENCE_SOURCE = fluidRegistry.register(moduleName, "void_essence", 
-            () -> new BaseFlowingFluid.Source(voidEssenceProperties));
+        // Update the fluids with proper properties
+        if (VOID_ESSENCE_SOURCE.get() instanceof BaseFlowingFluid.Source source) {
+            source.updateProperties(voidEssenceProperties);
+        }
         
-        VOID_ESSENCE_FLOWING = fluidRegistry.register(moduleName, "flowing_void_essence", 
-            () -> new BaseFlowingFluid.Flowing(voidEssenceProperties));
+        if (VOID_ESSENCE_FLOWING.get() instanceof BaseFlowingFluid.Flowing flowing) {
+            flowing.updateProperties(voidEssenceProperties);
+        }
         
-        VOID_ESSENCE_BUCKET = itemRegistry.register(moduleName, "void_essence_bucket", 
-            () -> new BucketItem(VOID_ESSENCE_SOURCE, new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
+        // Register Void Pee fluid - same pattern as void essence
+        // First register our holders
+        VOID_PEE_SOURCE = fluidRegistry.register(moduleName, "void_pee", 
+            () -> new BaseFlowingFluid.Source(null)); // Temporary null properties
         
-        // Register Void Pee fluid (humorous alchemical reagent)
+        VOID_PEE_FLOWING = fluidRegistry.register(moduleName, "flowing_void_pee", 
+            () -> new BaseFlowingFluid.Flowing(null)); // Temporary null properties
+        
+        VOID_PEE_BUCKET = itemRegistry.register(moduleName, "void_pee_bucket", 
+            () -> new BucketItem(() -> VOID_PEE_SOURCE.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
+            
+        // Now create the properties with the registered fluids
         BaseFlowingFluid.Properties voidPeeProperties = new BaseFlowingFluid.Properties(
-            createVoidPeeFluidType(),
+            () -> createVoidPeeFluidType(),
             () -> this.VOID_PEE_SOURCE.get(),
             () -> this.VOID_PEE_FLOWING.get()
         ).bucket(() -> this.VOID_PEE_BUCKET.get());
         
-        VOID_PEE_SOURCE = fluidRegistry.register(moduleName, "void_pee", 
-            () -> new BaseFlowingFluid.Source(voidPeeProperties));
+        // Update the fluids with proper properties
+        if (VOID_PEE_SOURCE.get() instanceof BaseFlowingFluid.Source source) {
+            source.updateProperties(voidPeeProperties);
+        }
         
-        VOID_PEE_FLOWING = fluidRegistry.register(moduleName, "flowing_void_pee", 
-            () -> new BaseFlowingFluid.Flowing(voidPeeProperties));
-        
-        VOID_PEE_BUCKET = itemRegistry.register(moduleName, "void_pee_bucket", 
-            () -> new BucketItem(VOID_PEE_SOURCE, new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
+        if (VOID_PEE_FLOWING.get() instanceof BaseFlowingFluid.Flowing flowing) {
+            flowing.updateProperties(voidPeeProperties);
+        }
         
         EldritchVoid.LOGGER.info("Registered Void Alchemy fluids");
     }
@@ -90,15 +115,18 @@ public class VoidAlchemyFluids {
      * @return The fluid type
      */
     private FluidType createVoidEssenceFluidType() {
-        return new FluidType(FluidType.Properties.create()
-            .descriptionId("fluid.eldritchvoid.void_essence")
-            .canSwim(false)
-            .canDrown(true)
-            .canPushEntity(true)
-            .supportsBoating(false)
-            .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL)
-            .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY))
-        {
+        // In NeoForge 1.21.5, FluidType.Properties.create() has been replaced
+        // For compatibility, let's create our fluid type with the new pattern
+        FluidType.Properties properties = FluidType.Properties.create();
+        properties.descriptionId("fluid.eldritchvoid.void_essence");
+        properties.canSwim(false);
+        properties.canDrown(true);
+        properties.canPushEntity(true);
+        properties.supportsBoating(false);
+        properties.sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL);
+        properties.sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY);
+        
+        return new FluidType(properties) {
             @Override
             public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
                 consumer.accept(new IClientFluidTypeExtensions() {
@@ -127,15 +155,17 @@ public class VoidAlchemyFluids {
      * @return The fluid type
      */
     private FluidType createVoidPeeFluidType() {
-        return new FluidType(FluidType.Properties.create()
-            .descriptionId("fluid.eldritchvoid.void_pee")
-            .canSwim(false)
-            .canDrown(true)
-            .canPushEntity(true)
-            .supportsBoating(false)
-            .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL)
-            .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY))
-        {
+        // Same pattern as void essence fluid type for NeoForge 1.21.5
+        FluidType.Properties properties = FluidType.Properties.create();
+        properties.descriptionId("fluid.eldritchvoid.void_pee");
+        properties.canSwim(false);
+        properties.canDrown(true);
+        properties.canPushEntity(true);
+        properties.supportsBoating(false);
+        properties.sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL);
+        properties.sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY);
+        
+        return new FluidType(properties) {
             @Override
             public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
                 consumer.accept(new IClientFluidTypeExtensions() {
