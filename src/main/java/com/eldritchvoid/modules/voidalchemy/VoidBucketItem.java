@@ -25,7 +25,7 @@ public class VoidBucketItem extends BucketItem {
      */
     public VoidBucketItem(DeferredHolder<Fluid, Fluid> fluidHolder, Item.Properties properties) {
         // Create a supplier that will provide the fluid when needed
-        super(() -> fluidHolder.get(), properties);
+        super(new FluidSupplier(fluidHolder), properties);
         this.fluidHolder = fluidHolder;
         
         EldritchVoid.LOGGER.debug("Created VoidBucketItem for fluid: {}", fluidHolder.getId());
@@ -36,18 +36,33 @@ public class VoidBucketItem extends BucketItem {
      */
     @Override
     public ItemStack getDefaultInstance() {
-        ItemStack itemStack = new ItemStack(this);
-        CompoundTag compoundTag = new CompoundTag();
-        CompoundTag fluidTag = new CompoundTag();
-        fluidTag.putString("id", fluidHolder.getId().toString());
-        compoundTag.put("fluid", fluidTag);
-        // In NeoForge 1.21.5, NBT handling has changed
-        CompoundTag existingTag = itemStack.getTag();
-        if (existingTag == null) {
-            itemStack.setTag(compoundTag);
-        } else {
-            existingTag.merge(compoundTag);
+        // Create a basic ItemStack for this bucket
+        ItemStack itemStack = super.getDefaultInstance();
+        
+        try {
+            // Add our own custom NBT data for the fluid
+            CompoundTag compoundTag = itemStack.getOrCreateTagElement("fluid");
+            compoundTag.putString("id", fluidHolder.getId().toString());
+        } catch (Exception e) {
+            EldritchVoid.LOGGER.error("Failed to set tag on bucket item: {}", e.getMessage());
         }
+        
         return itemStack;
+    }
+    
+    /**
+     * A proper implementation of a fluid supplier for the BucketItem constructor.
+     */
+    private static class FluidSupplier implements Supplier<Fluid> {
+        private final DeferredHolder<Fluid, Fluid> holder;
+        
+        public FluidSupplier(DeferredHolder<Fluid, Fluid> holder) {
+            this.holder = holder;
+        }
+        
+        @Override
+        public Fluid get() {
+            return holder.get();
+        }
     }
 }
