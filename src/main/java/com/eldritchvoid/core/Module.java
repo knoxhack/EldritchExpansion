@@ -1,51 +1,193 @@
 package com.eldritchvoid.core;
 
+import com.eldritchvoid.EldritchVoid;
+import com.eldritchvoid.core.config.ModuleConfig;
+import com.eldritchvoid.core.registry.ModuleRegistry;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+
 /**
- * Interface that all modules in the Eldritch Void mod must implement.
- * Modules are self-contained features that can be enabled/disabled independently.
+ * Base class for all modules.
+ * Provides common functionality and lifecycle management.
  */
-public interface Module {
-    /**
-     * Initialize the module. This is called during mod initialization.
-     */
-    void init();
+public abstract class Module {
+    protected final String moduleName;
+    protected final ModuleConfig config;
+    protected final IEventBus modBus;
+    protected ModuleManager manager;
+    protected boolean enabled = true;
+    protected boolean clientReady = false;
+    protected boolean serverReady = false;
     
     /**
-     * Get the ID of the module. This should be a lowercase string with no spaces.
+     * Create a new module.
      *
-     * @return The module ID
+     * @param moduleName The name of the module
+     * @param modBus The mod event bus
      */
-    String getId();
+    protected Module(String moduleName, IEventBus modBus) {
+        this.moduleName = moduleName;
+        this.modBus = modBus;
+        this.config = new ModuleConfig(moduleName);
+        
+        // Configure with default settings
+        setupConfig(config);
+        config.build();
+        
+        EldritchVoid.LOGGER.info("Created module: {}", moduleName);
+    }
     
     /**
-     * Get the display name of the module. This is used in UIs and logs.
+     * Set up the module's configuration.
      *
-     * @return The module display name
+     * @param config The config to set up
      */
-    String getDisplayName();
+    protected abstract void setupConfig(ModuleConfig config);
     
     /**
-     * Check if this module depends on another module.
+     * Register the module's content.
+     */
+    protected abstract void registerContent();
+    
+    /**
+     * Initialize the module during common setup.
      *
-     * @param moduleId The ID of the module to check dependency on
-     * @return True if this module depends on the specified module
+     * @param event The common setup event
      */
-    boolean dependsOn(String moduleId);
+    protected abstract void init(FMLCommonSetupEvent event);
     
     /**
-     * Called when the module is enabled.
+     * Initialize the module on the client side.
+     *
+     * @param event The client setup event
      */
-    void onEnable();
+    protected abstract void clientInit(FMLClientSetupEvent event);
     
     /**
-     * Called when the module is disabled.
+     * Create a resource location for this module.
+     *
+     * @param path The resource path
+     * @return The resource location
      */
-    void onDisable();
+    public ResourceLocation location(String path) {
+        return new ResourceLocation(EldritchVoid.MOD_ID, "modules/" + moduleName + "/" + path);
+    }
     
     /**
-     * Check if the module is enabled.
+     * Get the module's name.
+     *
+     * @return The module name
+     */
+    public String getModuleName() {
+        return moduleName;
+    }
+    
+    /**
+     * Set the module manager.
+     *
+     * @param manager The module manager
+     */
+    void setManager(ModuleManager manager) {
+        this.manager = manager;
+    }
+    
+    /**
+     * Get the module manager.
+     *
+     * @return The module manager
+     */
+    public ModuleManager getManager() {
+        return manager;
+    }
+    
+    /**
+     * Register a registry with this module.
+     *
+     * @param registry The registry to register
+     * @param <T> The registry type
+     */
+    public <T> void registerRegistry(ModuleRegistry<T> registry) {
+        registry.register(modBus);
+    }
+    
+    /**
+     * Check if this module is enabled.
      *
      * @return True if the module is enabled
      */
-    boolean isEnabled();
+    public boolean isEnabled() {
+        return enabled;
+    }
+    
+    /**
+     * Enable or disable this module.
+     *
+     * @param enabled Whether the module should be enabled
+     */
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        
+        if (enabled) {
+            EldritchVoid.LOGGER.info("Enabled module: {}", moduleName);
+        } else {
+            EldritchVoid.LOGGER.info("Disabled module: {}", moduleName);
+        }
+    }
+    
+    /**
+     * Check if this module is ready on the client side.
+     *
+     * @return True if the module is client-ready
+     */
+    public boolean isClientReady() {
+        return clientReady;
+    }
+    
+    /**
+     * Check if this module is ready on the server side.
+     *
+     * @return True if the module is server-ready
+     */
+    public boolean isServerReady() {
+        return serverReady;
+    }
+    
+    /**
+     * Called when content registration is complete.
+     * Do not override this unless you know what you're doing.
+     */
+    void onRegistrationComplete() {
+        // Default implementation does nothing
+    }
+    
+    /**
+     * Called when a common setup event is received.
+     * Do not override this unless you know what you're doing.
+     *
+     * @param event The common setup event
+     */
+    void onCommonSetup(FMLCommonSetupEvent event) {
+        if (!enabled) return;
+        
+        init(event);
+        serverReady = true;
+        EldritchVoid.LOGGER.info("Module {} initialized on common side", moduleName);
+    }
+    
+    /**
+     * Called when a client setup event is received.
+     * Do not override this unless you know what you're doing.
+     *
+     * @param event The client setup event
+     */
+    void onClientSetup(FMLClientSetupEvent event) {
+        if (!enabled) return;
+        
+        clientInit(event);
+        clientReady = true;
+        EldritchVoid.LOGGER.info("Module {} initialized on client side", moduleName);
+    }
 }
