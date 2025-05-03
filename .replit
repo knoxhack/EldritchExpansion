@@ -35,7 +35,7 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd build-management && npm start"
-waitForPort = 5000
+waitForPort = 3000
 
 [deployment]
 run = ["sh", "-c", "./gradlew build"]

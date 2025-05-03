@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Form, Alert, Table, Badge, Nav, Navbar } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, Alert, Table, Badge, Nav, Navbar, Spinner } from 'react-bootstrap';
 import axios from 'axios';
+import './App.css';
 
 function App() {
   const [builds, setBuilds] = useState([
@@ -10,6 +11,8 @@ function App() {
       name: "Initial Development",
       date: "2025-05-03",
       status: "In Progress",
+      previousStatus: null,
+      jarFile: null,
       modules: [
         "VoidAlchemy", 
         "ObsidianForgemaster", 
@@ -31,6 +34,7 @@ function App() {
       name: "Module Expansion",
       date: "2025-05-10",
       status: "Planned",
+      previousStatus: null,
       modules: [
         "VoidAlchemy", 
         "ObsidianForgemaster", 
@@ -52,6 +56,7 @@ function App() {
       name: "Entity System",
       date: "2025-05-17",
       status: "Planned",
+      previousStatus: null,
       modules: [
         "VoidAlchemy", 
         "ObsidianForgemaster", 
@@ -137,8 +142,27 @@ function App() {
   };
 
   const updateBuildStatus = (id, newStatus) => {
+    setBuilds(builds.map(build => {
+      // If status is changing to Completed, generate a JAR file path
+      const jarFile = newStatus === 'Completed' ? 
+        `eldritch-expansion-${build.version}.jar` : build.jarFile;
+        
+      return build.id === id ? { 
+        ...build, 
+        previousStatus: build.status, 
+        status: newStatus,
+        jarFile: jarFile
+      } : build;
+    }));
+  };
+  
+  const undoStatusChange = (id) => {
     setBuilds(builds.map(build => 
-      build.id === id ? { ...build, status: newStatus } : build
+      build.id === id && build.previousStatus ? { 
+        ...build, 
+        status: build.previousStatus,
+        previousStatus: null 
+      } : build
     ));
   };
 
@@ -157,15 +181,18 @@ function App() {
 
   return (
     <div className="App">
-      <Navbar bg="dark" variant="dark" expand="lg" className="mb-4">
+      <Navbar bg="dark" variant="dark" expand="lg" className="mb-4 animate__animated animate__fadeIn">
         <Container>
-          <Navbar.Brand>Eldritch Expansion Build Management</Navbar.Brand>
+          <Navbar.Brand className="animate__animated animate__pulse animate__infinite">
+            <span className="me-2">⚡</span>
+            Eldritch Expansion Build Management
+          </Navbar.Brand>
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="me-auto">
-              <Nav.Link onClick={() => setActiveTab('builds')} active={activeTab === 'builds'}>Builds</Nav.Link>
-              <Nav.Link onClick={() => setActiveTab('create')} active={activeTab === 'create'}>Create Build</Nav.Link>
-              <Nav.Link onClick={() => setActiveTab('modules')} active={activeTab === 'modules'}>Modules</Nav.Link>
+              <Nav.Link onClick={() => setActiveTab('builds')} active={activeTab === 'builds'} className="animate__animated animate__fadeIn">Builds</Nav.Link>
+              <Nav.Link onClick={() => setActiveTab('create')} active={activeTab === 'create'} className="animate__animated animate__fadeIn animate__delay-1s">Create Build</Nav.Link>
+              <Nav.Link onClick={() => setActiveTab('modules')} active={activeTab === 'modules'} className="animate__animated animate__fadeIn animate__delay-2s">Modules</Nav.Link>
             </Nav>
           </Navbar.Collapse>
         </Container>
@@ -173,7 +200,7 @@ function App() {
 
       <Container>
         {activeTab === 'builds' && (
-          <>
+          <div className="animate__animated animate__fadeIn">
             <h2 className="mb-4">Build History</h2>
             <Table striped bordered hover>
               <thead>
@@ -188,34 +215,63 @@ function App() {
               </thead>
               <tbody>
                 {builds.map(build => (
-                  <tr key={build.id}>
-                    <td>{build.version}</td>
-                    <td>{build.name}</td>
-                    <td>{build.date}</td>
-                    <td>{getStatusBadge(build.status)}</td>
-                    <td>{build.modules.length} modules</td>
-                    <td>
-                      <Button size="sm" variant="primary" className="me-2" onClick={() => setActiveTab(`details-${build.id}`)}>
-                        Details
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant={build.status === 'In Progress' ? "success" : "primary"} 
-                        onClick={() => updateBuildStatus(build.id, build.status === 'In Progress' ? 'Completed' : 'In Progress')}
-                        disabled={build.status === 'Completed' || build.status === 'Failed'}
-                      >
-                        {build.status === 'In Progress' ? "Mark Complete" : "Start Build"}
-                      </Button>
+                  <tr key={build.id} className="build-row animate__animated animate__fadeIn">
+                    <td data-label="Version">{build.version}</td>
+                    <td data-label="Name">{build.name}</td>
+                    <td data-label="Date">{build.date}</td>
+                    <td data-label="Status">{getStatusBadge(build.status)}</td>
+                    <td data-label="Modules">{build.modules.length} modules</td>
+                    <td data-label="Actions">
+                      <div className="d-flex">
+                        <Button size="sm" variant="primary" className="me-2" onClick={() => setActiveTab(`details-${build.id}`)}>
+                          Details
+                        </Button>
+                        
+                        {build.previousStatus && (
+                          <Button 
+                            size="sm" 
+                            variant="warning" 
+                            className="me-2"
+                            onClick={() => undoStatusChange(build.id)}
+                            title="Undo the last status change"
+                          >
+                            Undo
+                          </Button>
+                        )}
+                        
+                        <Button 
+                          size="sm" 
+                          variant={build.status === 'In Progress' ? "success" : "primary"} 
+                          onClick={() => updateBuildStatus(build.id, build.status === 'In Progress' ? 'Completed' : 'In Progress')}
+                          disabled={build.status === 'Completed' || build.status === 'Failed'}
+                          className="me-2"
+                        >
+                          {build.status === 'In Progress' ? "Mark Complete" : "Start Build"}
+                        </Button>
+                        
+                        {build.status === 'Completed' && build.jarFile && (
+                          <Button
+                            size="sm"
+                            variant="info"
+                            className="download-btn"
+                            as="a"
+                            href={`#download-${build.id}`}
+                            title={`Download ${build.jarFile}`}
+                          >
+                            <span className="download-icon">⬇️</span> Download
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </Table>
-          </>
+          </div>
         )}
 
         {activeTab === 'create' && (
-          <Card>
+          <Card className="animate__animated animate__fadeIn">
             <Card.Header as="h5">Create New Build</Card.Header>
             <Card.Body>
               <Form>
@@ -332,7 +388,7 @@ function App() {
         )}
 
         {activeTab === 'modules' && (
-          <>
+          <div className="animate__animated animate__fadeIn">
             <h2 className="mb-4">Module Status</h2>
             <Table striped bordered hover>
               <thead>
@@ -362,9 +418,9 @@ function App() {
                     : 'Not Started';
 
                   return (
-                    <tr key={module}>
-                      <td>{module}</td>
-                      <td>
+                    <tr key={module} className="animate__animated animate__fadeIn">
+                      <td data-label="Module">{module}</td>
+                      <td data-label="Status">
                         {implementationStatus === 'Completed' ? (
                           <Badge bg="success">Implemented</Badge>
                         ) : implementationStatus === 'In Progress' ? (
@@ -375,14 +431,14 @@ function App() {
                           <Badge bg="warning">Planned</Badge>
                         )}
                       </td>
-                      <td>{firstAddedIn}</td>
-                      <td>{lastUpdatedIn}</td>
+                      <td data-label="First Added">{firstAddedIn}</td>
+                      <td data-label="Last Updated">{lastUpdatedIn}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </Table>
-          </>
+          </div>
         )}
 
         {activeTab.startsWith('details-') && (() => {
@@ -392,66 +448,109 @@ function App() {
           if (!build) return <Alert variant="danger">Build not found</Alert>;
           
           return (
-            <>
+            <div className="animate__animated animate__fadeIn">
               <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2>Build Details: {build.version} - {build.name}</h2>
                 <Button variant="outline-secondary" onClick={() => setActiveTab('builds')}>Back to Builds</Button>
               </div>
               <Row>
                 <Col md={6}>
-                  <Card className="mb-4">
+                  <Card className="mb-4 animate__animated animate__fadeInLeft animate__delay-1s">
                     <Card.Header>Build Information</Card.Header>
                     <Card.Body>
                       <p><strong>Version:</strong> {build.version}</p>
                       <p><strong>Name:</strong> {build.name}</p>
                       <p><strong>Date:</strong> {build.date}</p>
                       <p><strong>Status:</strong> {getStatusBadge(build.status)}</p>
-                      {build.status !== 'Completed' && build.status !== 'Failed' && (
-                        <div className="mt-3">
+                      <div className="mt-3">
+                        {build.previousStatus && (
                           <Button 
-                            variant={build.status === 'In Progress' ? "success" : "primary"} 
-                            onClick={() => updateBuildStatus(build.id, build.status === 'In Progress' ? 'Completed' : 'In Progress')}
+                            variant="warning" 
+                            className="me-2"
+                            onClick={() => undoStatusChange(build.id)}
                           >
-                            {build.status === 'In Progress' ? "Mark Complete" : "Start Build"}
+                            Undo Status Change
                           </Button>
-                          {build.status === 'In Progress' && (
+                        )}
+                        
+                        {build.status !== 'Completed' && build.status !== 'Failed' && (
+                          <>
                             <Button 
-                              variant="danger" 
-                              className="ms-2"
-                              onClick={() => updateBuildStatus(build.id, 'Failed')}
+                              variant={build.status === 'In Progress' ? "success" : "primary"} 
+                              className="me-2"
+                              onClick={() => updateBuildStatus(build.id, build.status === 'In Progress' ? 'Completed' : 'In Progress')}
                             >
-                              Mark Failed
+                              {build.status === 'In Progress' ? "Mark Complete" : "Start Build"}
                             </Button>
-                          )}
+                            {build.status === 'In Progress' && (
+                              <Button 
+                                variant="danger"
+                                onClick={() => updateBuildStatus(build.id, 'Failed')}
+                              >
+                                Mark Failed
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      
+                      {build.status === 'Completed' && build.jarFile && (
+                        <div className="jar-download-container mt-4 animate__animated animate__fadeIn">
+                          <div>
+                            <h5>Build JAR</h5>
+                            <p className="mb-2">Your build is complete! Download the JAR file to install the mod:</p>
+                            <Button 
+                              variant="info" 
+                              className="download-btn"
+                              as="a" 
+                              href={`#download-${build.id}`}
+                              title={`Download ${build.jarFile}`}
+                            >
+                              <span className="download-icon">⬇️</span> Download {build.jarFile}
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </Card.Body>
                   </Card>
                 </Col>
                 <Col md={6}>
-                  <Card className="mb-4">
+                  <Card className="mb-4 animate__animated animate__fadeInRight animate__delay-1s">
                     <Card.Header>Modules ({build.modules.length})</Card.Header>
                     <Card.Body>
                       <div className="d-flex flex-wrap gap-2">
-                        {build.modules.map(module => (
-                          <Badge key={module} bg="info" className="p-2">{module}</Badge>
+                        {build.modules.map((module, idx) => (
+                          <Badge 
+                            key={module} 
+                            bg="info" 
+                            className="p-2 animate__animated animate__fadeIn"
+                            style={{animationDelay: `${0.2 * idx}s`}}
+                          >
+                            {module}
+                          </Badge>
                         ))}
                       </div>
                     </Card.Body>
                   </Card>
                 </Col>
               </Row>
-              <Card>
+              <Card className="animate__animated animate__fadeInUp animate__delay-2s">
                 <Card.Header>Changes</Card.Header>
                 <Card.Body>
                   <ul className="list-group">
                     {build.changes.map((change, index) => (
-                      <li key={index} className="list-group-item">{change}</li>
+                      <li 
+                        key={index} 
+                        className="list-group-item animate__animated animate__fadeInUp"
+                        style={{animationDelay: `${0.3 + (index * 0.1)}s`}}
+                      >
+                        {change}
+                      </li>
                     ))}
                   </ul>
                 </Card.Body>
               </Card>
-            </>
+            </div>
           );
         })()}
       </Container>
