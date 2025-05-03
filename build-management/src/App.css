@@ -1,17 +1,24 @@
 :root {
-  --neon-green: #00ff41;
+  --neon-green: #6dff90; /* Changed from #00ff41 to a softer green */
   --neon-blue: #0077ff;
   --dark-bg: #0a0e17;
   --dark-card: #131a24;
   --dark-input: #192230;
   --dark-border: #313e50;
-  --text-glow: 0 0 5px rgba(0, 255, 65, 0.7);
+  --text-glow: 0 0 3px rgba(109, 255, 144, 0.8);
 }
 
-body {
+body, html {
   background-color: var(--dark-bg);
   color: #e0e0e0;
   font-family: 'Consolas', 'Courier New', monospace;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  background-color: var(--dark-bg);
 }
 
 .App {
@@ -21,7 +28,7 @@ body {
 .navbar {
   background-color: #070b12 !important;
   border-bottom: 1px solid var(--neon-green);
-  box-shadow: 0 2px 10px rgba(0, 255, 65, 0.2);
+  box-shadow: 0 2px 10px rgba(109, 255, 144, 0.2);
   margin-bottom: 2rem !important;
 }
 
