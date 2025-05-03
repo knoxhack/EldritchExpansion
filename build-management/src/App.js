@@ -309,6 +309,272 @@ function App() {
       setReleaseCreating(false);
     }
   };
+  
+  // Build process functions
+  const startBuild = (build) => {
+    if (buildInProgress) return;
+    
+    setCurrentBuild(build);
+    setBuildInProgress(true);
+    setBuildProgress(0);
+    setBuildOutput([
+      { type: 'info', message: `Starting build for ${build.version}...`, timestamp: new Date().toISOString() }
+    ]);
+    setShowBuildModal(true);
+    setBuildError(null);
+    setCurrentBuildProcess({
+      buildId: build.id,
+      startTime: new Date().toISOString(),
+      step: 'initializing'
+    });
+    
+    // Simulate a build process
+    simulateBuildProcess(build);
+  };
+  
+  const simulateBuildProcess = (build) => {
+    const steps = [
+      { name: 'initializing', duration: 1000, progress: 5 },
+      { name: 'compiling', duration: 3000, progress: 30 },
+      { name: 'packaging', duration: 2000, progress: 60 },
+      { name: 'testing', duration: 2000, progress: 80 },
+      { name: 'finalizing', duration: 1000, progress: 95 }
+    ];
+    
+    let currentStepIndex = 0;
+    
+    const processStep = () => {
+      if (currentStepIndex >= steps.length) {
+        // Build completed
+        completeBuild(build, true);
+        return;
+      }
+      
+      const step = steps[currentStepIndex];
+      setCurrentBuildProcess(prev => ({ ...prev, step: step.name }));
+      setBuildProgress(step.progress);
+      
+      // Add log entries for this step
+      setBuildOutput(prev => [
+        ...prev,
+        { 
+          type: 'info', 
+          message: `Step: ${step.name}`, 
+          timestamp: new Date().toISOString() 
+        }
+      ]);
+      
+      // Add some random detailed logs
+      if (step.name === 'compiling') {
+        setTimeout(() => {
+          setBuildOutput(prev => [
+            ...prev,
+            { 
+              type: 'info', 
+              message: `Compiling module: VoidAlchemy`, 
+              timestamp: new Date().toISOString() 
+            },
+            { 
+              type: 'info', 
+              message: `Compiling module: ObsidianForgemaster`, 
+              timestamp: new Date().toISOString() 
+            }
+          ]);
+        }, 500);
+        
+        // Add a warning to make it interesting
+        setTimeout(() => {
+          setBuildOutput(prev => [
+            ...prev,
+            { 
+              type: 'warning', 
+              message: `Warning: Deprecated method used in VoidAlchemyFluids.java:122`, 
+              timestamp: new Date().toISOString() 
+            }
+          ]);
+        }, 1500);
+      }
+      
+      if (step.name === 'testing') {
+        setTimeout(() => {
+          setBuildOutput(prev => [
+            ...prev,
+            { 
+              type: 'info', 
+              message: `Running tests: 24 tests completed`, 
+              timestamp: new Date().toISOString() 
+            }
+          ]);
+        }, 1000);
+      }
+      
+      // Move to next step after delay
+      setTimeout(() => {
+        currentStepIndex++;
+        processStep();
+      }, step.duration);
+    };
+    
+    processStep();
+  };
+  
+  const abortBuild = () => {
+    if (!buildInProgress) return;
+    
+    setBuildOutput(prev => [
+      ...prev,
+      { 
+        type: 'error', 
+        message: 'Build manually aborted by user', 
+        timestamp: new Date().toISOString() 
+      }
+    ]);
+    
+    // Simulate cleanup
+    setTimeout(() => {
+      setBuildOutput(prev => [
+        ...prev,
+        { 
+          type: 'info', 
+          message: 'Cleaning up resources...', 
+          timestamp: new Date().toISOString() 
+        }
+      ]);
+      
+      setTimeout(() => {
+        completeBuild(currentBuild, false);
+      }, 1000);
+    }, 500);
+  };
+  
+  const completeBuild = (build, success) => {
+    setBuildInProgress(false);
+    setBuildProgress(success ? 100 : 0);
+    
+    const newStatus = success ? 'Completed' : 'Failed';
+    
+    // Add final log message
+    setBuildOutput(prev => [
+      ...prev,
+      { 
+        type: success ? 'success' : 'error', 
+        message: `Build ${success ? 'completed successfully' : 'failed'}`, 
+        timestamp: new Date().toISOString() 
+      }
+    ]);
+    
+    // Update build status
+    updateBuildStatus(build.id, newStatus);
+    
+    // In a real app, you would also generate build artifacts here
+    if (success) {
+      setTimeout(() => {
+        const jarFile = `eldritch-expansion-${build.version}.jar`;
+        setBuilds(builds.map(b => 
+          b.id === build.id 
+            ? { 
+                ...b, 
+                jarFile,
+                lastBuildTime: new Date().toISOString(),
+                buildLogs: buildOutput
+              } 
+            : b
+        ));
+      }, 1000);
+    }
+  };
+  
+  // Versioning functions
+  const openVersioningModal = (build) => {
+    setCurrentBuild(build);
+    
+    // Parse the current version into components
+    const versionRegex = /^(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)\.(\d+))?(?:-(.+))?$/;
+    const matches = build.version.match(versionRegex) || [0, 0, 0];
+    
+    setVersionData({
+      major: parseInt(matches[1] || 0),
+      minor: parseInt(matches[2] || 0),
+      patch: parseInt(matches[3] || 0),
+      type: matches[4] || 'release',
+      buildNumber: parseInt(matches[5] || 1),
+      customSuffix: matches[6] || ''
+    });
+    
+    setShowVersionModal(true);
+  };
+  
+  const generateVersionString = () => {
+    const { major, minor, patch, type, buildNumber, customSuffix } = versionData;
+    
+    let version = `${major}.${minor}.${patch}`;
+    
+    if (type !== 'release') {
+      version += `-${type}.${buildNumber}`;
+    }
+    
+    if (customSuffix) {
+      version += `-${customSuffix}`;
+    }
+    
+    return version;
+  };
+  
+  const applyVersionChange = (incrementType) => {
+    // Create a copy of the version data
+    const newVersionData = { ...versionData };
+    
+    // Increment the specified part
+    switch (incrementType) {
+      case 'major':
+        newVersionData.major += 1;
+        newVersionData.minor = 0;
+        newVersionData.patch = 0;
+        break;
+      case 'minor':
+        newVersionData.minor += 1;
+        newVersionData.patch = 0;
+        break;
+      case 'patch':
+        newVersionData.patch += 1;
+        break;
+      case 'build':
+        newVersionData.buildNumber += 1;
+        break;
+      default:
+        break;
+    }
+    
+    setVersionData(newVersionData);
+  };
+  
+  const saveVersionChanges = () => {
+    if (!currentBuild) return;
+    
+    const newVersion = generateVersionString();
+    
+    // Update the build with the new version
+    setBuilds(builds.map(build => 
+      build.id === currentBuild.id 
+        ? { ...build, version: newVersion, versionUpdated: new Date().toISOString() } 
+        : build
+    ));
+    
+    setShowVersionModal(false);
+  };
+  
+  // Build output functions
+  const openBuildOutput = (build) => {
+    setCurrentBuild(build);
+    setBuildOutput(build.buildLogs || []);
+    setShowBuildOutputModal(true);
+  };
+  
+  const getFilteredBuildOutput = () => {
+    if (logFilter === 'all') return buildOutput;
+    
+    return buildOutput.filter(log => log.type === logFilter);
+  };
 
   return (
     <div className="App">
@@ -370,14 +636,34 @@ function App() {
                           </Button>
                         )}
                         
-                        <Button 
-                          size="sm" 
-                          variant={build.status === 'In Progress' ? "success" : "primary"} 
-                          onClick={() => updateBuildStatus(build.id, build.status === 'In Progress' ? 'Completed' : 'In Progress')}
-                          disabled={build.status === 'Completed' || build.status === 'Failed'}
+                        {build.status === 'In Progress' ? (
+                          <Button 
+                            size="sm" 
+                            variant="success"
+                            onClick={() => updateBuildStatus(build.id, 'Completed')}
+                            className="me-2"
+                          >
+                            Mark Complete
+                          </Button>
+                        ) : build.status !== 'Completed' && build.status !== 'Failed' ? (
+                          <Button 
+                            size="sm" 
+                            variant="primary"
+                            onClick={() => startBuild(build)}
+                            className="me-2"
+                          >
+                            Start Build
+                          </Button>
+                        ) : null}
+                        
+                        <Button
+                          size="sm"
+                          variant="outline-primary"
+                          onClick={() => openVersioningModal(build)}
                           className="me-2"
+                          title="Manage version"
                         >
-                          {build.status === 'In Progress' ? "Mark Complete" : "Start Build"}
+                          Version
                         </Button>
                         
                         {build.status === 'Completed' && build.jarFile && (
@@ -649,6 +935,20 @@ function App() {
                         )}
                       </div>
                       
+                      {build.lastBuildTime && (
+                        <div className="mt-4 animate__animated animate__fadeIn">
+                          <h5>Build Information</h5>
+                          <p className="mb-2">Last build: {new Date(build.lastBuildTime).toLocaleString()}</p>
+                          <Button 
+                            variant="outline-secondary" 
+                            onClick={() => openBuildOutput(build)}
+                            className="mb-3"
+                          >
+                            <span className="me-1">📋</span> View Build Logs
+                          </Button>
+                        </div>
+                      )}
+                      
                       {build.status === 'Completed' && build.jarFile && (
                         <div className="jar-download-container mt-4 animate__animated animate__fadeIn">
                           <div>
@@ -739,6 +1039,393 @@ function App() {
           );
         })()}
       </Container>
+      
+      {/* Build Process Modal */}
+      <Modal show={showBuildModal} onHide={() => !buildInProgress && setShowBuildModal(false)} size="lg" centered backdrop="static">
+        <Modal.Header closeButton={!buildInProgress}>
+          <Modal.Title>
+            {buildInProgress ? `Building ${currentBuild?.version}` : 'Build Complete'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="mb-3">
+            <h5>Build Progress</h5>
+            <ProgressBar 
+              now={buildProgress} 
+              label={`${buildProgress}%`} 
+              animated={buildInProgress}
+              variant={buildInProgress ? "primary" : buildProgress === 100 ? "success" : "danger"}
+            />
+          </div>
+          
+          {currentBuildProcess && (
+            <div className="mb-3">
+              <h5>Current Step: {currentBuildProcess.step}</h5>
+              <p>Started: {new Date(currentBuildProcess.startTime).toLocaleString()}</p>
+            </div>
+          )}
+          
+          <div className="build-output">
+            <h5>Build Output</h5>
+            <div className="output-filter mb-2">
+              <div className="btn-group">
+                <Button
+                  size="sm"
+                  variant={logFilter === 'all' ? "primary" : "outline-primary"}
+                  onClick={() => setLogFilter('all')}
+                >
+                  All
+                </Button>
+                <Button
+                  size="sm"
+                  variant={logFilter === 'error' ? "danger" : "outline-danger"}
+                  onClick={() => setLogFilter('error')}
+                >
+                  Errors
+                </Button>
+                <Button
+                  size="sm"
+                  variant={logFilter === 'warning' ? "warning" : "outline-warning"}
+                  onClick={() => setLogFilter('warning')}
+                >
+                  Warnings
+                </Button>
+                <Button
+                  size="sm"
+                  variant={logFilter === 'info' ? "info" : "outline-info"}
+                  onClick={() => setLogFilter('info')}
+                >
+                  Info
+                </Button>
+              </div>
+            </div>
+            <div className="output-console">
+              {getFilteredBuildOutput().map((log, index) => (
+                <div key={index} className={`log-entry log-${log.type}`}>
+                  <span className="log-time">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+                  <span className={`log-badge badge bg-${log.type === 'info' ? 'info' : log.type === 'warning' ? 'warning' : log.type === 'error' ? 'danger' : 'success'}`}>
+                    {log.type.toUpperCase()}
+                  </span>
+                  <span className="log-message">{log.message}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {buildError && (
+            <Alert variant="danger" className="mt-3">
+              {buildError}
+            </Alert>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          {buildInProgress ? (
+            <Button variant="danger" onClick={abortBuild}>
+              Abort Build
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={() => setShowBuildModal(false)}>
+              Close
+            </Button>
+          )}
+        </Modal.Footer>
+      </Modal>
+      
+      {/* Version Control Modal */}
+      <Modal show={showVersionModal} onHide={() => setShowVersionModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Version Control</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Current version: <strong>{currentBuild?.version}</strong></p>
+          
+          <h5 className="mb-3">Quick Version Updates</h5>
+          <div className="d-flex gap-2 mb-4">
+            <Button variant="outline-primary" onClick={() => applyVersionChange('major')}>
+              Major ↑
+            </Button>
+            <Button variant="outline-primary" onClick={() => applyVersionChange('minor')}>
+              Minor ↑
+            </Button>
+            <Button variant="outline-primary" onClick={() => applyVersionChange('patch')}>
+              Patch ↑
+            </Button>
+          </div>
+          
+          <h5 className="mb-3">Custom Version</h5>
+          <Form>
+            <Row className="mb-3">
+              <Col xs={4}>
+                <Form.Group>
+                  <Form.Label>Major</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    value={versionData.major}
+                    onChange={e => setVersionData({...versionData, major: parseInt(e.target.value)})}
+                  />
+                </Form.Group>
+              </Col>
+              <Col xs={4}>
+                <Form.Group>
+                  <Form.Label>Minor</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    value={versionData.minor}
+                    onChange={e => setVersionData({...versionData, minor: parseInt(e.target.value)})}
+                  />
+                </Form.Group>
+              </Col>
+              <Col xs={4}>
+                <Form.Group>
+                  <Form.Label>Patch</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    value={versionData.patch}
+                    onChange={e => setVersionData({...versionData, patch: parseInt(e.target.value)})}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Type</Form.Label>
+                  <Form.Select
+                    value={versionData.type}
+                    onChange={e => setVersionData({...versionData, type: e.target.value})}
+                  >
+                    <option value="release">Release</option>
+                    <option value="beta">Beta</option>
+                    <option value="alpha">Alpha</option>
+                    <option value="rc">Release Candidate</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Build Number</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="1"
+                    value={versionData.buildNumber}
+                    onChange={e => setVersionData({...versionData, buildNumber: parseInt(e.target.value)})}
+                    disabled={versionData.type === 'release'}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Custom Suffix (optional)</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="e.g., snapshot, hotfix"
+                value={versionData.customSuffix}
+                onChange={e => setVersionData({...versionData, customSuffix: e.target.value})}
+              />
+            </Form.Group>
+          </Form>
+          
+          <div className="bg-light p-3 rounded">
+            <h6>Preview</h6>
+            <code>{generateVersionString()}</code>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowVersionModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={saveVersionChanges}>
+            Save Version
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      
+      {/* Build Output Modal */}
+      <Modal show={showBuildOutputModal} onHide={() => setShowBuildOutputModal(false)} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Build Logs: {currentBuild?.version}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="output-filter mb-3">
+            <div className="btn-group">
+              <Button
+                size="sm"
+                variant={logFilter === 'all' ? "primary" : "outline-primary"}
+                onClick={() => setLogFilter('all')}
+              >
+                All
+              </Button>
+              <Button
+                size="sm"
+                variant={logFilter === 'error' ? "danger" : "outline-danger"}
+                onClick={() => setLogFilter('error')}
+              >
+                Errors
+              </Button>
+              <Button
+                size="sm"
+                variant={logFilter === 'warning' ? "warning" : "outline-warning"}
+                onClick={() => setLogFilter('warning')}
+              >
+                Warnings
+              </Button>
+              <Button
+                size="sm"
+                variant={logFilter === 'info' ? "info" : "outline-info"}
+                onClick={() => setLogFilter('info')}
+              >
+                Info
+              </Button>
+              <Button
+                size="sm"
+                variant={logFilter === 'success' ? "success" : "outline-success"}
+                onClick={() => setLogFilter('success')}
+              >
+                Success
+              </Button>
+            </div>
+          </div>
+          <div className="output-console-full">
+            {getFilteredBuildOutput().map((log, index) => (
+              <div key={index} className={`log-entry log-${log.type}`}>
+                <span className="log-time">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+                <span className={`log-badge badge bg-${log.type === 'info' ? 'info' : log.type === 'warning' ? 'warning' : log.type === 'error' ? 'danger' : 'success'}`}>
+                  {log.type.toUpperCase()}
+                </span>
+                <span className="log-message">{log.message}</span>
+              </div>
+            ))}
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowBuildOutputModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      
+      {/* Download Options Modal */}
+      <Modal show={showDownloadModal} onHide={() => setShowDownloadModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Download Options</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>You're downloading <strong>{currentBuild?.jarFile}</strong></p>
+          
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Minecraft Version</Form.Label>
+              <Form.Select
+                value={downloadOptions.minecraftVersion}
+                onChange={e => setDownloadOptions({...downloadOptions, minecraftVersion: e.target.value})}
+              >
+                <option value="1.21.5">1.21.5 (Latest)</option>
+                <option value="1.20.1">1.20.1</option>
+                <option value="1.19.4">1.19.4</option>
+              </Form.Select>
+            </Form.Group>
+            
+            <Form.Group className="mb-3">
+              <Form.Check
+                type="checkbox"
+                label="Include source code"
+                checked={downloadOptions.includeSourceCode}
+                onChange={e => setDownloadOptions({...downloadOptions, includeSourceCode: e.target.checked})}
+              />
+            </Form.Group>
+            
+            <Form.Group className="mb-3">
+              <Form.Check
+                type="checkbox"
+                label="Include development tools"
+                checked={downloadOptions.includeDevTools}
+                onChange={e => setDownloadOptions({...downloadOptions, includeDevTools: e.target.checked})}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDownloadModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleDownloadWithOptions}>
+            Download
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      
+      {/* GitHub Release Modal */}
+      <Modal show={showReleaseModal} onHide={() => !releaseCreating && setShowReleaseModal(false)} centered backdrop={releaseCreating ? "static" : true}>
+        <Modal.Header closeButton={!releaseCreating}>
+          <Modal.Title>Create GitHub Release</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {releaseSuccess ? (
+            <Alert variant="success">
+              Successfully created GitHub release!
+            </Alert>
+          ) : (
+            <>
+              <p>You're creating a GitHub release for <strong>v{currentBuild?.version}</strong></p>
+              
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>Release Notes</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={6}
+                    value={releaseNotes}
+                    onChange={e => setReleaseNotes(e.target.value)}
+                  />
+                </Form.Group>
+                
+                <Form.Group className="mb-3">
+                  <Form.Check
+                    type="checkbox"
+                    label="This is a pre-release"
+                    checked={isPrerelease}
+                    onChange={e => setIsPrerelease(e.target.checked)}
+                  />
+                </Form.Group>
+              </Form>
+              
+              {releaseError && (
+                <Alert variant="danger" className="mt-3">
+                  {releaseError}
+                </Alert>
+              )}
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          {!releaseSuccess && (
+            <>
+              <Button variant="secondary" onClick={() => setShowReleaseModal(false)} disabled={releaseCreating}>
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                onClick={submitGitHubRelease} 
+                disabled={releaseCreating || !releaseNotes.trim()}
+              >
+                {releaseCreating ? (
+                  <>
+                    <Spinner as="span" size="sm" animation="border" role="status" className="me-2" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Release"
+                )}
+              </Button>
+            </>
+          )}
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
