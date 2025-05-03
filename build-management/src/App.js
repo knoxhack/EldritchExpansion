@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Form, Alert, Table, Badge, Nav, Navbar, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, Alert, Table, Badge, Nav, Navbar, Spinner, Modal, OverlayTrigger, Tooltip, ProgressBar, InputGroup } from 'react-bootstrap';
 import axios from 'axios';
 import './App.css';
 
@@ -97,6 +97,47 @@ function App() {
     "EldritchBestiary",
     "VoidCultists"
   ]);
+  
+  // GitHub release functionality
+  const [showReleaseModal, setShowReleaseModal] = useState(false);
+  const [currentBuild, setCurrentBuild] = useState(null);
+  const [releaseNotes, setReleaseNotes] = useState('');
+  const [isPrerelease, setIsPrerelease] = useState(false);
+  const [releaseCreating, setReleaseCreating] = useState(false);
+  const [releaseSuccess, setReleaseSuccess] = useState(false);
+  const [releaseError, setReleaseError] = useState(null);
+  
+  // Download functionality
+  const [downloadStats, setDownloadStats] = useState({});
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadOptions, setDownloadOptions] = useState({
+    minecraftVersion: '1.21.5',
+    includeSourceCode: false,
+    includeDevTools: false
+  });
+  
+  // Build process management
+  const [buildInProgress, setBuildInProgress] = useState(false);
+  const [currentBuildProcess, setCurrentBuildProcess] = useState(null);
+  const [buildProgress, setBuildProgress] = useState(0);
+  const [buildOutput, setBuildOutput] = useState([]);
+  const [showBuildModal, setShowBuildModal] = useState(false);
+  const [buildError, setBuildError] = useState(null);
+  
+  // Versioning management
+  const [showVersionModal, setShowVersionModal] = useState(false);
+  const [versionData, setVersionData] = useState({
+    major: 0,
+    minor: 0,
+    patch: 0,
+    type: 'release', // release, beta, alpha
+    buildNumber: 1,
+    customSuffix: ''
+  });
+  
+  // Build output and logs
+  const [showBuildOutputModal, setShowBuildOutputModal] = useState(false);
+  const [logFilter, setLogFilter] = useState('all'); // all, error, warning, info
 
   const handleAddChange = () => {
     if (changeInput.trim() !== "") {
@@ -178,6 +219,96 @@ function App() {
         return <Badge bg="secondary">Planned</Badge>;
     }
   };
+  
+  // Download handling functions
+  const handleDownload = (build) => {
+    // Track download stats
+    setDownloadStats(prev => ({
+      ...prev,
+      [build.id]: (prev[build.id] || 0) + 1
+    }));
+    
+    // In a real application, this would communicate with a backend server
+    // to generate or retrieve the actual JAR file
+    
+    // For now, we'll simulate a download by opening the download modal
+    setCurrentBuild(build);
+    setShowDownloadModal(true);
+  };
+  
+  const generateDownloadLink = (build, options) => {
+    const { minecraftVersion, includeSourceCode, includeDevTools } = options;
+    const baseUrl = `/downloads/`;
+    const versionSegment = build.version;
+    const mcVersionSegment = minecraftVersion;
+    const extras = [];
+    
+    if (includeSourceCode) extras.push('src');
+    if (includeDevTools) extras.push('dev');
+    
+    const extrasSegment = extras.length > 0 ? `-${extras.join('-')}` : '';
+    
+    return `${baseUrl}eldritch-expansion-${versionSegment}-mc${mcVersionSegment}${extrasSegment}.jar`;
+  };
+  
+  const handleDownloadWithOptions = () => {
+    if (!currentBuild) return;
+    
+    // Generate the download link with the selected options
+    const downloadLink = generateDownloadLink(currentBuild, downloadOptions);
+    
+    // In a real app, this would trigger the actual download
+    // but for demo purposes, we'll just close the modal
+    setShowDownloadModal(false);
+    
+    // Open the download in a new tab to simulate the download
+    window.open(downloadLink, '_blank');
+  };
+  
+  // GitHub release functions
+  const handleCreateRelease = (build) => {
+    setCurrentBuild(build);
+    // Auto-populate release notes with the build changes
+    setReleaseNotes(build.changes.map(change => `- ${change}`).join('\n'));
+    setShowReleaseModal(true);
+  };
+  
+  const submitGitHubRelease = async () => {
+    if (!currentBuild) return;
+    
+    setReleaseCreating(true);
+    setReleaseError(null);
+    
+    try {
+      // In a real application, this would use the GitHub API
+      // to create an actual release, using a backend endpoint
+      // that securely stores the GitHub token
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Update the build to indicate it has a GitHub release
+      setBuilds(builds.map(build => 
+        build.id === currentBuild.id 
+          ? { ...build, gitHubReleaseUrl: `https://github.com/yourusername/eldritch-expansion/releases/tag/v${build.version}` } 
+          : build
+      ));
+      
+      setReleaseSuccess(true);
+      
+      // Close the modal after a delay
+      setTimeout(() => {
+        setShowReleaseModal(false);
+        setReleaseCreating(false);
+        setReleaseSuccess(false);
+      }, 2000);
+      
+    } catch (error) {
+      console.error("Error creating GitHub release:", error);
+      setReleaseError("Failed to create GitHub release. Please try again.");
+      setReleaseCreating(false);
+    }
+  };
 
   return (
     <div className="App">
@@ -253,12 +384,36 @@ function App() {
                           <Button
                             size="sm"
                             variant="info"
-                            className="download-btn"
-                            as="a"
-                            href={`#download-${build.id}`}
+                            className="download-btn me-2"
+                            onClick={() => handleDownload(build)}
                             title={`Download ${build.jarFile}`}
                           >
                             <span className="download-icon">⬇️</span> Download
+                          </Button>
+                        )}
+                        
+                        {build.status === 'Completed' && !build.gitHubReleaseUrl && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleCreateRelease(build)}
+                            title="Create GitHub Release"
+                          >
+                            <span className="me-1">🚀</span> GitHub Release
+                          </Button>
+                        )}
+                        
+                        {build.status === 'Completed' && build.gitHubReleaseUrl && (
+                          <Button
+                            size="sm"
+                            variant="outline-secondary"
+                            as="a"
+                            href={build.gitHubReleaseUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="View GitHub Release"
+                          >
+                            <span className="me-1">🔗</span> GitHub
                           </Button>
                         )}
                       </div>
@@ -499,15 +654,45 @@ function App() {
                           <div>
                             <h5>Build JAR</h5>
                             <p className="mb-2">Your build is complete! Download the JAR file to install the mod:</p>
-                            <Button 
-                              variant="info" 
-                              className="download-btn"
-                              as="a" 
-                              href={`#download-${build.id}`}
-                              title={`Download ${build.jarFile}`}
-                            >
-                              <span className="download-icon">⬇️</span> Download {build.jarFile}
-                            </Button>
+                            <div className="d-flex flex-wrap gap-2">
+                              <Button 
+                                variant="info" 
+                                className="download-btn"
+                                onClick={() => handleDownload(build)}
+                                title={`Download ${build.jarFile}`}
+                              >
+                                <span className="download-icon">⬇️</span> Download {build.jarFile}
+                              </Button>
+                              
+                              {!build.gitHubReleaseUrl && (
+                                <Button
+                                  variant="secondary"
+                                  onClick={() => handleCreateRelease(build)}
+                                  title="Create GitHub Release"
+                                >
+                                  <span className="me-1">🚀</span> Create GitHub Release
+                                </Button>
+                              )}
+                              
+                              {build.gitHubReleaseUrl && (
+                                <Button
+                                  variant="outline-secondary"
+                                  as="a"
+                                  href={build.gitHubReleaseUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="View GitHub Release"
+                                >
+                                  <span className="me-1">🔗</span> View on GitHub
+                                </Button>
+                              )}
+                            </div>
+                            
+                            {downloadStats[build.id] && (
+                              <p className="mt-2 text-muted">
+                                <small>Downloaded {downloadStats[build.id]} {downloadStats[build.id] === 1 ? 'time' : 'times'}</small>
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}
