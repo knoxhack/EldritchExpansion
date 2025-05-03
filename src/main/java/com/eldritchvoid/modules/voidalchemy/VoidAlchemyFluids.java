@@ -69,10 +69,13 @@ public class VoidAlchemyFluids {
             () -> new BaseFlowingFluid.Flowing(voidEssenceProperties));
         
         // Create and register the bucket item
-        Supplier<Item> voidEssenceBucketSupplier = () -> new BucketItem(
-            () -> VOID_ESSENCE_SOURCE.get(), 
-            new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)
-        );
+        // In NeoForge 1.21.5, we need to be careful with supplier typing
+        java.util.function.Supplier<Item> voidEssenceBucketSupplier = () -> {
+            return new BucketItem(
+                () -> VOID_ESSENCE_SOURCE.get(), 
+                new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)
+            );
+        };
         
         VOID_ESSENCE_BUCKET = itemRegistry.register(moduleName, "void_essence_bucket", 
             voidEssenceBucketSupplier);
@@ -104,10 +107,13 @@ public class VoidAlchemyFluids {
             () -> new BaseFlowingFluid.Flowing(voidPeeProperties));
         
         // Create and register the bucket item
-        Supplier<Item> voidPeeBucketSupplier = () -> new BucketItem(
-            () -> VOID_PEE_SOURCE.get(), 
-            new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)
-        );
+        // Same pattern for Void Pee bucket item
+        java.util.function.Supplier<Item> voidPeeBucketSupplier = () -> {
+            return new BucketItem(
+                () -> VOID_PEE_SOURCE.get(), 
+                new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)
+            );
+        };
         
         VOID_PEE_BUCKET = itemRegistry.register(moduleName, "void_pee_bucket", 
             voidPeeBucketSupplier);

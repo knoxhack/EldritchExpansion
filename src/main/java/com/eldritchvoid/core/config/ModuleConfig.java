@@ -226,10 +226,23 @@ public class ModuleConfig {
     public void build() {
         spec = builder.build();
         
-        // In NeoForge 1.21.5, we need to create a ModConfig instance directly
-        // and then register it with the ConfigTracker
+        // In NeoForge 1.21.5, the ModConfig constructor signature has changed
+        // It now requires a ModContainer and a ReentrantLock
         String fileName = EldritchVoid.MOD_ID + "-" + moduleName + ".toml";
-        ModConfig modConfig = new ModConfig(ModConfig.Type.COMMON, spec, fileName, EldritchVoid.MOD_ID);
+        
+        // Get the current mod container from the ModLoadingContext
+        var modContainer = ModLoadingContext.get().getActiveContainer();
+        
+        // Create a ModConfig instance with the new constructor signature
+        ModConfig modConfig = new ModConfig(
+            ModConfig.Type.COMMON, 
+            spec, 
+            modContainer,
+            fileName,
+            new java.util.concurrent.locks.ReentrantLock()
+        );
+        
+        // Register it with the ConfigTracker
         net.neoforged.fml.config.ConfigTracker.INSTANCE.trackConfig(modConfig);
         
         EldritchVoid.LOGGER.info("Registered configuration for module: {}", moduleName);

@@ -56,7 +56,17 @@ public class Registration {
      * @return The module registry
      */
     @SuppressWarnings("unchecked")
-    public static <T> ModuleRegistry<T> getOrCreateModuleRegistry(String moduleName, String registryName, ResourceKey<? extends Registry<T>> registryKey) {
+    public static <T> ModuleRegistry<T> getOrCreateModuleRegistry(String moduleName, String registryName, Object registryObj) {
+        // In NeoForge 1.21.5, registry types changed, so we need to support both ResourceKey and DefaultedRegistry
+        ResourceKey<? extends Registry<T>> registryKey;
+        
+        if (registryObj instanceof ResourceKey) {
+            registryKey = (ResourceKey<? extends Registry<T>>)registryObj;
+        } else {
+            // If it's a DefaultedRegistry (BuiltInRegistries), get its key
+            registryKey = ((Registry<T>)registryObj).key();
+        }
+        
         Map<ResourceKey<? extends Registry<?>>, ModuleRegistry<?>> moduleRegistryMap = MODULE_REGISTRIES.computeIfAbsent(moduleName, k -> new HashMap<>());
         
         ModuleRegistry<?> registry = moduleRegistryMap.get(registryKey);
