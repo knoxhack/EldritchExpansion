@@ -109,12 +109,12 @@ public class VoidAlchemyFluids {
                     
                     @Override
                     public ResourceLocation getStillTexture() {
-                        return new ResourceLocation("block/water_still");
+                        return new ResourceLocation("minecraft", "block/water_still");
                     }
                     
                     @Override
                     public ResourceLocation getFlowingTexture() {
-                        return new ResourceLocation("block/water_flow");
+                        return new ResourceLocation("minecraft", "block/water_flow");
                     }
                 });
             }
@@ -146,12 +146,12 @@ public class VoidAlchemyFluids {
                     
                     @Override
                     public ResourceLocation getStillTexture() {
-                        return new ResourceLocation("block/water_still");
+                        return new ResourceLocation("minecraft", "block/water_still");
                     }
                     
                     @Override
                     public ResourceLocation getFlowingTexture() {
-                        return new ResourceLocation("block/water_flow");
+                        return new ResourceLocation("minecraft", "block/water_flow");
                     }
                 });
             }

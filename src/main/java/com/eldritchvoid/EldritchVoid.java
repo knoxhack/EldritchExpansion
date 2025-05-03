@@ -8,7 +8,6 @@ import com.eldritchvoid.core.network.ModuleNetwork;
 import com.eldritchvoid.core.registry.Registration;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import org.slf4j.Logger;
@@ -35,10 +34,8 @@ public class EldritchVoid {
     /**
      * Create the mod instance.
      */
-    public EldritchVoid() {
+    public EldritchVoid(IEventBus modEventBus) {
         LOGGER.info("Initializing Eldritch Void Mod");
-        
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         
         // Initialize registration system
         Registration.init();
@@ -54,7 +51,7 @@ public class EldritchVoid {
         modEventBus.addListener(this::onGatherData);
         
         // Initialize modules here
-        initializeModules();
+        initializeModules(modEventBus);
         
         // Load documentation
         ModuleDocs.loadDocs();
@@ -64,10 +61,12 @@ public class EldritchVoid {
     
     /**
      * Initialize all modules.
+     * 
+     * @param modEventBus The mod event bus
      */
-    private void initializeModules() {
+    private void initializeModules(IEventBus modEventBus) {
         // Register modules here
-        moduleManager.registerModule(new com.eldritchvoid.modules.voidalchemy.VoidAlchemyModule(FMLJavaModLoadingContext.get().getModEventBus()));
+        moduleManager.registerModule(new com.eldritchvoid.modules.voidalchemy.VoidAlchemyModule(modEventBus));
         
         // Initialize all registered modules
         moduleManager.initializeModules();
