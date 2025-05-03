@@ -3,23 +3,20 @@ package com.eldritchvoid.modules.voidalchemy;
 import com.eldritchvoid.EldritchVoid;
 import com.eldritchvoid.core.registry.ModuleRegistry;
 import com.eldritchvoid.core.registry.Registration;
-import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.common.SoundActions;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Fluids for the Void Alchemy module.
@@ -72,7 +69,7 @@ public class VoidAlchemyFluids {
             () -> new BaseFlowingFluid.Flowing(voidEssenceProperties));
         
         // Create and register the bucket item
-        java.util.function.Supplier<Item> voidEssenceBucketSupplier = () -> new BucketItem(
+        Supplier<Item> voidEssenceBucketSupplier = () -> new BucketItem(
             () -> VOID_ESSENCE_SOURCE.get(), 
             new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)
         );
@@ -107,7 +104,7 @@ public class VoidAlchemyFluids {
             () -> new BaseFlowingFluid.Flowing(voidPeeProperties));
         
         // Create and register the bucket item
-        java.util.function.Supplier<Item> voidPeeBucketSupplier = () -> new BucketItem(
+        Supplier<Item> voidPeeBucketSupplier = () -> new BucketItem(
             () -> VOID_PEE_SOURCE.get(), 
             new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)
         );
@@ -144,7 +141,7 @@ public class VoidAlchemyFluids {
         properties.sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY);
         
         return new FluidType(properties) {
-            @Override
+            // NeoForge 1.21.5: initializeClient is not an override
             public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
                 consumer.accept(new IClientFluidTypeExtensions() {
                     @Override
@@ -183,7 +180,7 @@ public class VoidAlchemyFluids {
         properties.sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY);
         
         return new FluidType(properties) {
-            @Override
+            // NeoForge 1.21.5: initializeClient is not an override
             public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
                 consumer.accept(new IClientFluidTypeExtensions() {
                     @Override

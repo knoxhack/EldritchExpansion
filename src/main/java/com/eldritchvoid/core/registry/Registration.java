@@ -17,14 +17,14 @@ import java.util.Map;
  * Provides access to all registries and helper methods.
  */
 public class Registration {
-    // Base registry for blocks
-    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(Registry.BLOCK_REGISTRY, EldritchVoid.MOD_ID);
+    // Base registry for blocks - updated for NeoForge 1.21.5
+    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(net.minecraft.core.registries.BuiltInRegistries.BLOCK, EldritchVoid.MOD_ID);
     
-    // Base registry for items
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(Registry.ITEM_REGISTRY, EldritchVoid.MOD_ID);
+    // Base registry for items - updated for NeoForge 1.21.5
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(net.minecraft.core.registries.BuiltInRegistries.ITEM, EldritchVoid.MOD_ID);
     
-    // Base registry for entity types
-    public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(Registry.ENTITY_TYPE_REGISTRY, EldritchVoid.MOD_ID);
+    // Base registry for entity types - updated for NeoForge 1.21.5
+    public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE, EldritchVoid.MOD_ID);
     
     // Map of module registries
     private static final Map<String, Map<ResourceKey<? extends Registry<?>>, ModuleRegistry<?>>> MODULE_REGISTRIES = new HashMap<>();
