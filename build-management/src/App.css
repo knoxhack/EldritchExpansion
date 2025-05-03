@@ -1,0 +1,36 @@
+.App {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.navbar-brand {
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
+.badge {
+  font-weight: 500;
+}
+
+.table thead th {
+  background-color: #343a40;
+  color: white;
+}
+
+.list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+.module-badge {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.btn-outline-primary:hover {
+  color: white;
+}

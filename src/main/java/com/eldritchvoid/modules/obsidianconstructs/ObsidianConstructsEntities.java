@@ -11,7 +11,6 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
-import net.neoforged.neoforge.event.entity.SpawnPlacementRegisterEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -40,9 +39,8 @@ public class ObsidianConstructsEntities {
         // Get the mod event bus
         IEventBus modEventBus = net.neoforged.fml.ModLoadingContext.get().getActiveContainer().getEventBus();
         
-        // Register event listeners for entity attributes and spawn placement
+        // Register event listeners for entity attributes
         modEventBus.addListener(ObsidianConstructsEntities::registerEntityAttributes);
-        modEventBus.addListener(ObsidianConstructsEntities::registerSpawnPlacements);
         
         // Register spawn eggs
         SPAWN_EGGS.register(modEventBus);
@@ -68,11 +66,9 @@ public class ObsidianConstructsEntities {
     
     /**
      * Register spawn placements.
-     *
-     * @param event The spawn placement register event
+     * Note: In NeoForge 1.21.5, this may be handled differently or through another event
      */
-    private static void registerSpawnPlacements(SpawnPlacementRegisterEvent event) {
-        // We'll register spawn placements for our entities when they're fully implemented
-        // For now, this is just a placeholder
+    private static void registerSpawnPlacements() {
+        // We'll implement this when necessary using the appropriate method for NeoForge 1.21.5
     }
 }

@@ -1,4 +1,4 @@
-modules = ["java", "java-21", "python-3.11"]
+modules = ["java", "java-21", "python-3.11", "nodejs-20"]
 
 [nix]
 channel = "stable-24_05"
@@ -16,6 +16,10 @@ author = "agent"
 task = "workflow.run"
 args = "Build and Run Minecraft Mod"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Build Management Site"
+
 [[workflows.workflow]]
 name = "Build and Run Minecraft Mod"
 author = "agent"
@@ -24,5 +28,18 @@ author = "agent"
 task = "shell.exec"
 args = "./gradlew build"
 
+[[workflows.workflow]]
+name = "Build Management Site"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd build-management && npm start"
+waitForPort = 5000
+
 [deployment]
 run = ["sh", "-c", "./gradlew build"]
+
+[[ports]]
+localPort = 3000
+externalPort = 80
