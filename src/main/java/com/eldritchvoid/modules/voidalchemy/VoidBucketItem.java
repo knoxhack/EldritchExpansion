@@ -24,8 +24,13 @@ public class VoidBucketItem extends BucketItem {
      * @param properties  The item properties
      */
     public VoidBucketItem(DeferredHolder<Fluid, Fluid> fluidHolder, Item.Properties properties) {
-        // Create a proper supplier to the fluid for the BucketItem constructor
-        super(new FluidSupplier(fluidHolder), properties);
+        // Create a supplier that will provide the fluid when needed
+        super(new Supplier<Fluid>() {
+            @Override
+            public Fluid get() {
+                return fluidHolder.get();
+            }
+        }, properties);
         this.fluidHolder = fluidHolder;
         
         EldritchVoid.LOGGER.debug("Created VoidBucketItem for fluid: {}", fluidHolder.getId());
@@ -41,23 +46,12 @@ public class VoidBucketItem extends BucketItem {
         CompoundTag fluidTag = new CompoundTag();
         fluidTag.putString("id", fluidHolder.getId().toString());
         compoundTag.put("fluid", fluidTag);
-        itemStack.setTag(compoundTag);
+        // In NeoForge 1.21.5, setTag is replaced with different method
+        if (itemStack.hasTag()) {
+            itemStack.getTag().merge(compoundTag);
+        } else {
+            itemStack.getOrCreateTag().merge(compoundTag);
+        }
         return itemStack;
-    }
-    
-    /**
-     * A simple supplier that wraps a DeferredHolder for fluid access.
-     */
-    private static class FluidSupplier implements Supplier<Fluid> {
-        private final DeferredHolder<Fluid, Fluid> holder;
-        
-        public FluidSupplier(DeferredHolder<Fluid, Fluid> holder) {
-            this.holder = holder;
-        }
-        
-        @Override
-        public Fluid get() {
-            return holder.get();
-        }
     }
 }

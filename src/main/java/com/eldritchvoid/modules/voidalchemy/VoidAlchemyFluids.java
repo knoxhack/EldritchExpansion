@@ -11,7 +11,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.common.SoundActions;
-// import net.neoforged.neoforge.fluids.BaseFlowingFluid; // Using our custom implementation instead
+// Using our custom BaseFlowingFluid implementation instead of NeoForge's
+import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
@@ -92,9 +93,9 @@ public class VoidAlchemyFluids {
         )
         .bucket(() -> VOID_ESSENCE_BUCKET.get());
         
-        // Update the fluid references with the final properties (done via reflection in BaseFlowingFluid)
-        ((BaseFlowingFluid)VOID_ESSENCE_SOURCE.get()).setProperties(finalVoidEssenceProperties);
-        ((BaseFlowingFluid)VOID_ESSENCE_FLOWING.get()).setProperties(finalVoidEssenceProperties);
+        // Update the fluid references with the final properties using our helper
+        FluidPropertiesHelper.updateFluidProperties((FlowingFluid)VOID_ESSENCE_SOURCE.get(), finalVoidEssenceProperties);
+        FluidPropertiesHelper.updateFluidProperties((FlowingFluid)VOID_ESSENCE_FLOWING.get(), finalVoidEssenceProperties);
         
         // ===== VOID PEE FLUID =====
         // Create a fluid type for the humorous alchemical reagent
