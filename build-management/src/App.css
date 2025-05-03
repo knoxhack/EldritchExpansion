@@ -59,11 +59,12 @@ h2 {
 }
 
 .card {
-  background-color: var(--dark-card) !important;
+  background-color: #ffffff !important;
   border: 1px solid var(--dark-border) !important;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   margin-bottom: 1.5rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  color: #000000 !important;
 }
 
 .card:hover {
@@ -80,9 +81,9 @@ h2 {
 }
 
 .form-control, .form-select {
-  background-color: var(--dark-input) !important;
-  border: 1px solid var(--dark-border) !important;
-  color: #e0e0e0 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cccccc !important;
+  color: #000000 !important;
 }
 
 .form-control:focus, .form-select:focus {
@@ -91,8 +92,9 @@ h2 {
 }
 
 .form-label {
-  color: #a0a0a0;
+  color: #000000;
   margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 
 .btn-primary {
@@ -169,9 +171,9 @@ h2 {
 }
 
 .table {
-  color: #e0e0e0 !important;
-  background-color: var(--dark-card) !important;
-  border-color: var(--dark-border) !important;
+  color: #000000 !important;
+  background-color: #ffffff !important;
+  border-color: #dddddd !important;
 }
 
 .table thead th {
@@ -184,11 +186,11 @@ h2 {
 }
 
 .table-striped tbody tr:nth-of-type(odd) {
-  background-color: rgba(19, 26, 36, 0.6) !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
 }
 
 .table-hover tbody tr:hover {
-  background-color: rgba(109, 255, 144, 0.05) !important;
+  background-color: rgba(109, 255, 144, 0.2) !important;
 }
 
 .badge {
@@ -241,9 +243,9 @@ h2 {
 }
 
 .list-group-item {
-  background-color: var(--dark-card) !important;
+  background-color: #ffffff !important;
   border-color: var(--dark-border) !important;
-  color: #e0e0e0 !important;
+  color: #000000 !important;
   transition: all 0.3s ease;
 }
 
@@ -341,9 +343,10 @@ h2 {
   align-items: center;
   margin-top: 1rem;
   padding: 1rem;
-  background-color: rgba(109, 255, 144, 0.05);
+  background-color: #f5f5f5;
   border: 1px dashed var(--neon-green);
   border-radius: 0.25rem;
+  color: #000000 !important;
 }
 
 /* Button animations */
