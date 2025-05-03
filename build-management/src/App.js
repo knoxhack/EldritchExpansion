@@ -276,7 +276,6 @@ function App() {
                   startBuild={startBuild}
                   stopBuild={stopBuild}
                   createCheckpoint={createCheckpoint}
-                  createGitHubRelease={createGitHubRelease}
                   buildProgress={buildProgress}
                   buildStatus={buildInProgress ? 'Building' : 'Ready'}
                   currentVersion="0.1.0"

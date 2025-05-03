@@ -5,6 +5,7 @@ const { exec } = require('child_process');
 const WebSocket = require('ws');
 const path = require('path');
 const fs = require('fs');
+const axios = require('axios');
 
 // Create Express app
 const app = express();
@@ -20,6 +21,15 @@ app.use(bodyParser.json());
 let builds = [];
 let runningBuild = null;
 let buildId = 1;
+
+// Version management
+let currentVersion = {
+  major: 0,
+  minor: 1,
+  patch: 0,
+  build: 1,
+  lastRelease: null
+};
 
 // Create WebSocket server on a different port to avoid conflict with the HTTP server
 const WS_PORT = 5002;
@@ -432,6 +442,194 @@ function calculateProgress(line, task) {
   }
   return null; // No progress update
 }
+
+// Get current version
+app.get('/api/version', (req, res) => {
+  const versionString = `${currentVersion.major}.${currentVersion.minor}.${currentVersion.patch}`;
+  res.json({
+    ...currentVersion,
+    versionString,
+    fullVersion: `${versionString}-build.${currentVersion.build}`
+  });
+});
+
+// Update version manually
+app.post('/api/version/update', (req, res) => {
+  const { major, minor, patch, build } = req.body;
+  
+  if (major !== undefined) currentVersion.major = parseInt(major);
+  if (minor !== undefined) currentVersion.minor = parseInt(minor);
+  if (patch !== undefined) currentVersion.patch = parseInt(patch);
+  if (build !== undefined) currentVersion.build = parseInt(build);
+  
+  const versionString = `${currentVersion.major}.${currentVersion.minor}.${currentVersion.patch}`;
+  
+  broadcast({
+    type: 'VERSION_UPDATED',
+    version: {
+      ...currentVersion,
+      versionString,
+      fullVersion: `${versionString}-build.${currentVersion.build}`
+    }
+  });
+  
+  res.json({
+    message: 'Version updated successfully',
+    version: {
+      ...currentVersion,
+      versionString,
+      fullVersion: `${versionString}-build.${currentVersion.build}`
+    }
+  });
+});
+
+// Bump version automatically
+app.post('/api/version/bump', (req, res) => {
+  const { type } = req.body;
+  
+  switch (type) {
+    case 'major':
+      currentVersion.major += 1;
+      currentVersion.minor = 0;
+      currentVersion.patch = 0;
+      break;
+    case 'minor':
+      currentVersion.minor += 1;
+      currentVersion.patch = 0;
+      break;
+    case 'patch':
+      currentVersion.patch += 1;
+      break;
+    case 'build':
+    default:
+      currentVersion.build += 1;
+      break;
+  }
+  
+  const versionString = `${currentVersion.major}.${currentVersion.minor}.${currentVersion.patch}`;
+  
+  broadcast({
+    type: 'VERSION_UPDATED',
+    version: {
+      ...currentVersion,
+      versionString,
+      fullVersion: `${versionString}-build.${currentVersion.build}`
+    }
+  });
+  
+  res.json({
+    message: `Version bumped (${type}) successfully`,
+    version: {
+      ...currentVersion,
+      versionString,
+      fullVersion: `${versionString}-build.${currentVersion.build}`
+    }
+  });
+});
+
+// Create a GitHub release
+app.post('/api/github/release', async (req, res) => {
+  const { buildId, releaseNotes, isPrerelease } = req.body;
+  
+  // Validate request
+  if (!buildId) {
+    return res.status(400).json({ error: 'Build ID is required' });
+  }
+  
+  const build = builds.find(b => b.id === parseInt(buildId));
+  
+  if (!build) {
+    return res.status(404).json({ error: 'Build not found' });
+  }
+  
+  if (build.status !== 'success') {
+    return res.status(400).json({ error: 'Cannot create a release from a build that was not successful' });
+  }
+  
+  try {
+    // In a real implementation, this would call the GitHub API
+    // For this demo, we'll simulate the GitHub release
+    
+    // Bump the version
+    currentVersion.build += 1;
+    const versionString = `${currentVersion.major}.${currentVersion.minor}.${currentVersion.patch}`;
+    const fullVersion = `${versionString}-build.${currentVersion.build}`;
+    
+    // Create a timestamp for the release
+    const releaseDate = new Date().toISOString();
+    
+    // Create a simulated GitHub release URL
+    const githubReleaseUrl = `https://github.com/yourusername/eldritch-expansion/releases/tag/v${versionString}`;
+    
+    // Update the build record with release info
+    build.version = versionString;
+    build.fullVersion = fullVersion;
+    build.gitHubReleaseUrl = githubReleaseUrl;
+    build.releaseNotes = releaseNotes;
+    build.releaseDate = releaseDate;
+    build.isPrerelease = isPrerelease || false;
+    
+    // In a real implementation, we would also upload the JAR file to the GitHub release
+    
+    // Update the current version's last release info
+    currentVersion.lastRelease = {
+      date: releaseDate,
+      version: fullVersion,
+      url: githubReleaseUrl,
+      buildId: build.id
+    };
+    
+    // Broadcast the release
+    broadcast({
+      type: 'RELEASE_CREATED',
+      release: {
+        buildId: build.id,
+        version: versionString,
+        fullVersion,
+        githubReleaseUrl,
+        releaseDate,
+        isPrerelease: build.isPrerelease
+      }
+    });
+    
+    res.json({
+      message: 'GitHub release created successfully',
+      release: {
+        buildId: build.id,
+        version: versionString,
+        fullVersion,
+        githubReleaseUrl,
+        releaseDate,
+        isPrerelease: build.isPrerelease
+      }
+    });
+  } catch (error) {
+    console.error('Error creating GitHub release:', error);
+    res.status(500).json({ error: 'Failed to create GitHub release', details: error.message });
+  }
+});
+
+// Update build.gradle with the new version
+app.post('/api/gradle/update-version', (req, res) => {
+  const { version } = req.body;
+  
+  if (!version) {
+    return res.status(400).json({ error: 'Version is required' });
+  }
+  
+  try {
+    // In a real implementation, this would modify the build.gradle file
+    // For demo purposes, we'll just pretend it worked
+    
+    res.json({
+      message: `Updated build.gradle with version ${version}`,
+      version
+    });
+  } catch (error) {
+    console.error('Error updating build.gradle:', error);
+    res.status(500).json({ error: 'Failed to update build.gradle', details: error.message });
+  }
+});
 
 // Start the server
 app.listen(PORT, () => {
