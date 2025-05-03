@@ -1,6 +1,7 @@
 package com.eldritchvoid.core.registry;
 
 import com.eldritchvoid.EldritchVoid;
+import com.eldritchvoid.core.util.ResourceUtils;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -43,8 +44,8 @@ public class Registration {
      * @return The resource location
      */
     public static ResourceLocation location(String path) {
-        // NeoForge 1.21.5 requires using ResourceLocation.of() method
-        return ResourceLocation.of(EldritchVoid.MOD_ID, path);
+        // Using our utility method for NeoForge 1.21.5 compatibility
+        return ResourceUtils.createResourceLocation(EldritchVoid.MOD_ID, path);
     }
     
     /**

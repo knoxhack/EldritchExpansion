@@ -3,6 +3,7 @@ package com.eldritchvoid.core;
 import com.eldritchvoid.EldritchVoid;
 import com.eldritchvoid.core.config.ModuleConfig;
 import com.eldritchvoid.core.registry.ModuleRegistry;
+import com.eldritchvoid.core.util.ResourceUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -96,7 +97,7 @@ public abstract class Module {
      * @return The resource location
      */
     public ResourceLocation location(String path) {
-        return ResourceLocation.of(EldritchVoid.MOD_ID, "modules/" + moduleName + "/" + path);
+        return ResourceUtils.createResourceLocation(EldritchVoid.MOD_ID, "modules/" + moduleName + "/" + path);
     }
     
     /**
