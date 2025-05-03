@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Specification-Title: Eldritch Void
+Specification-Vendor: YourName
+Specification-Version: 1
+Implementation-Title: Eldritch Void
+Implementation-Version: 0.1.0
+Implementation-Vendor: YourName
+Implementation-Timestamp: 2025-05-03T12:42:36+0000
+
