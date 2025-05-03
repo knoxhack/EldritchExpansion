@@ -1,9 +1,10 @@
 package com.eldritchvoid.modules.obsidianconstructs;
 
 import com.eldritchvoid.core.Module;
+import com.eldritchvoid.core.config.ModuleConfig;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 
@@ -14,36 +15,41 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
  */
 public class ObsidianConstructsModule extends Module {
 
-    /**
-     * Initialize the module.
-     */
+    public ObsidianConstructsModule(IEventBus modBus) {
+        super("obsidianconstructs", modBus);
+        
+        // Register additional events
+        modBus.addListener(this::addCreative);
+    }
+    
     @Override
-    public void init() {
-        super.init();
-        
-        // Get the mod event bus
-        IEventBus modEventBus = ModLoadingContext.get().getActiveContainer().getEventBus();
-        
-        // Register lifecycle events
-        modEventBus.addListener(this::setup);
-        modEventBus.addListener(this::addCreative);
-        
+    protected void setupConfig(ModuleConfig config) {
+        // Configure module settings
+        config.addBooleanParameter("enable_construct_animations", true, "Enable construct animations");
+        config.addIntParameter("construct_health", 50, "Base health for obsidian constructs");
+        config.addIntParameter("construct_attack_damage", 5, "Base attack damage for obsidian constructs");
+    }
+    
+    @Override
+    protected void registerContent() {
         // Register blocks, items and entities
         ObsidianConstructsBlocks.register();
         ObsidianConstructsItems.register();
         ObsidianConstructsEntities.register();
         
-        log("Initialized Obsidian Constructs module");
+        log("Registered Obsidian Constructs content");
     }
     
-    /**
-     * Setup the module during common setup phase.
-     *
-     * @param event The common setup event
-     */
-    private void setup(final FMLCommonSetupEvent event) {
+    @Override
+    protected void init(FMLCommonSetupEvent event) {
         // Setup common functionality
         log("Setting up Obsidian Constructs module");
+    }
+    
+    @Override
+    protected void clientInit(FMLClientSetupEvent event) {
+        // Client-side initialization
+        log("Setting up Obsidian Constructs client features");
     }
     
     /**
@@ -52,6 +58,8 @@ public class ObsidianConstructsModule extends Module {
      * @param event The creative tab contents event
      */
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
+        if (!isEnabled()) return;
+        
         if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
             // Add construct blocks to the building blocks tab
             // Will be expanded when proper registrations are implemented
@@ -69,40 +77,11 @@ public class ObsidianConstructsModule extends Module {
     }
     
     /**
-     * Get the ID of the module.
-     *
-     * @return The module ID
-     */
-    @Override
-    public String getId() {
-        return "obsidianconstructs";
-    }
-    
-    /**
      * Get the display name of the module.
      *
      * @return The module display name
      */
-    @Override
     public String getDisplayName() {
         return "Obsidian Constructs";
-    }
-    
-    /**
-     * Called when the module is enabled.
-     */
-    @Override
-    public void onEnable() {
-        super.onEnable();
-        // Additional enabling logic
-    }
-    
-    /**
-     * Called when the module is disabled.
-     */
-    @Override
-    public void onDisable() {
-        super.onDisable();
-        // Additional disabling logic
     }
 }

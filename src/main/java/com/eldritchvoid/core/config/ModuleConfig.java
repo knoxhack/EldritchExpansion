@@ -225,7 +225,13 @@ public class ModuleConfig {
      */
     public void build() {
         spec = builder.build();
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, spec, EldritchVoid.MOD_ID + "-" + moduleName + ".toml");
+        
+        // In NeoForge 1.21.5, we need to create a ModConfig instance directly
+        // and then register it with the ConfigTracker
+        String fileName = EldritchVoid.MOD_ID + "-" + moduleName + ".toml";
+        ModConfig modConfig = new ModConfig(ModConfig.Type.COMMON, spec, fileName, EldritchVoid.MOD_ID);
+        net.neoforged.fml.config.ConfigTracker.INSTANCE.trackConfig(modConfig);
+        
         EldritchVoid.LOGGER.info("Registered configuration for module: {}", moduleName);
     }
     

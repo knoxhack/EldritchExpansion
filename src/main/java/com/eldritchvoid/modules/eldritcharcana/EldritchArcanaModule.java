@@ -1,9 +1,10 @@
 package com.eldritchvoid.modules.eldritcharcana;
 
 import com.eldritchvoid.core.Module;
+import com.eldritchvoid.core.config.ModuleConfig;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 
@@ -14,34 +15,39 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
  */
 public class EldritchArcanaModule extends Module {
 
-    /**
-     * Initialize the module.
-     */
+    public EldritchArcanaModule(IEventBus modBus) {
+        super("eldritcharcana", modBus);
+        
+        // Register additional events
+        modBus.addListener(this::addCreative);
+    }
+    
     @Override
-    public void init() {
-        super.init();
-        
-        // Get the mod event bus
-        IEventBus modEventBus = ModLoadingContext.get().getActiveContainer().getEventBus();
-        
-        // Register lifecycle events
-        modEventBus.addListener(this::setup);
-        modEventBus.addListener(this::addCreative);
-        
+    protected void setupConfig(ModuleConfig config) {
+        // Configure module settings
+        config.addBooleanParameter("enable_spell_casting", true, "Enable spell casting mechanics");
+        config.addIntParameter("mana_regeneration_rate", 10, "Rate at which mana regenerates (points per minute)");
+        config.addIntParameter("spell_cooldown", 20, "Base cooldown for spells in ticks");
+    }
+    
+    @Override
+    protected void registerContent() {
         // Register items and blocks
         EldritchArcanaItems.register();
         
-        log("Initialized Eldritch Arcana module");
+        log("Registered Eldritch Arcana content");
     }
     
-    /**
-     * Setup the module during common setup phase.
-     *
-     * @param event The common setup event
-     */
-    private void setup(final FMLCommonSetupEvent event) {
+    @Override
+    protected void init(FMLCommonSetupEvent event) {
         // Setup common functionality
         log("Setting up Eldritch Arcana module");
+    }
+    
+    @Override
+    protected void clientInit(FMLClientSetupEvent event) {
+        // Client-side initialization
+        log("Setting up Eldritch Arcana client features");
     }
     
     /**
@@ -50,6 +56,8 @@ public class EldritchArcanaModule extends Module {
      * @param event The creative tab contents event
      */
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
+        if (!isEnabled()) return;
+        
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             // Add magical tools and utilities
             // Will be expanded when proper registrations are implemented
@@ -62,40 +70,11 @@ public class EldritchArcanaModule extends Module {
     }
     
     /**
-     * Get the ID of the module.
-     *
-     * @return The module ID
-     */
-    @Override
-    public String getId() {
-        return "eldritcharcana";
-    }
-    
-    /**
      * Get the display name of the module.
      *
      * @return The module display name
      */
-    @Override
     public String getDisplayName() {
         return "Eldritch Arcana";
-    }
-    
-    /**
-     * Called when the module is enabled.
-     */
-    @Override
-    public void onEnable() {
-        super.onEnable();
-        // Additional enabling logic
-    }
-    
-    /**
-     * Called when the module is disabled.
-     */
-    @Override
-    public void onDisable() {
-        super.onDisable();
-        // Additional disabling logic
     }
 }

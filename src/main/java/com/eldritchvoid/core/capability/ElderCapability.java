@@ -53,9 +53,10 @@ public class ElderCapability<T> {
         this.resourceLocation = Registration.location(id);
         
         // Create capability tokens
-        this.blockCapability = BlockCapability.createSided(resourceLocation, capabilityClass);
-        this.itemCapability = ItemCapability.createSided(resourceLocation, capabilityClass);
-        this.entityCapability = EntityCapability.createSided(resourceLocation, capabilityClass);
+        // In NeoForge 1.21.5, createSided has been replaced with create methods
+        this.blockCapability = BlockCapability.create(resourceLocation, capabilityClass, Direction.class);
+        this.itemCapability = ItemCapability.create(resourceLocation, capabilityClass, Direction.class);
+        this.entityCapability = EntityCapability.create(resourceLocation, capabilityClass, Direction.class);
     }
     
     /**

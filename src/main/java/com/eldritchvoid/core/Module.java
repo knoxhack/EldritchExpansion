@@ -46,7 +46,21 @@ public abstract class Module {
      * @param message The message to log
      */
     protected void log(String message) {
-        EldritchVoid.LOGGER.info("[" + getDisplayName() + "] " + message);
+        EldritchVoid.LOGGER.info("[" + moduleName + "] " + message);
+    }
+    
+    /**
+     * Get the display name of the module.
+     * Can be overridden by subclasses to provide a more user-friendly name.
+     *
+     * @return The display name
+     */
+    public String getDisplayName() {
+        // Default to moduleNamed with first letter capitalized
+        if (moduleName == null || moduleName.isEmpty()) {
+            return "Unknown Module";
+        }
+        return moduleName.substring(0, 1).toUpperCase() + moduleName.substring(1);
     }
     
     /**
