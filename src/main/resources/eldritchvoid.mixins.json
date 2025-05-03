@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "package": "com.eldritchvoid.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "eldritchvoid.refmap.json",
+  "mixins": [
+  ],
+  "client": [
+  ],
+  "server": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "minVersion": "0.8.5"
+}
