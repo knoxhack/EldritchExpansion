@@ -3,12 +3,14 @@ package com.eldritchvoid.modules.voidalchemy;
 import com.eldritchvoid.EldritchVoid;
 import com.eldritchvoid.core.registry.ModuleRegistry;
 import com.eldritchvoid.core.registry.Registration;
+import com.eldritchvoid.modules.voidalchemy.FluidPropertiesHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FlowingFluid;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.common.SoundActions;
 // Using our custom BaseFlowingFluid implementation instead of NeoForge's
@@ -139,9 +141,9 @@ public class VoidAlchemyFluids {
         )
         .bucket(() -> VOID_PEE_BUCKET.get());
         
-        // Update the fluid references with the final properties (done via reflection in BaseFlowingFluid)
-        ((BaseFlowingFluid)VOID_PEE_SOURCE.get()).setProperties(finalVoidPeeProperties);
-        ((BaseFlowingFluid)VOID_PEE_FLOWING.get()).setProperties(finalVoidPeeProperties);
+        // Update the fluid references with the final properties using our helper
+        FluidPropertiesHelper.updateFluidProperties((FlowingFluid)VOID_PEE_SOURCE.get(), finalVoidPeeProperties);
+        FluidPropertiesHelper.updateFluidProperties((FlowingFluid)VOID_PEE_FLOWING.get(), finalVoidPeeProperties);
         
         EldritchVoid.LOGGER.info("Registered Void Alchemy fluids");
     }

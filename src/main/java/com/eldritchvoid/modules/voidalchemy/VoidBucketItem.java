@@ -25,12 +25,7 @@ public class VoidBucketItem extends BucketItem {
      */
     public VoidBucketItem(DeferredHolder<Fluid, Fluid> fluidHolder, Item.Properties properties) {
         // Create a supplier that will provide the fluid when needed
-        super(new Supplier<Fluid>() {
-            @Override
-            public Fluid get() {
-                return fluidHolder.get();
-            }
-        }, properties);
+        super(() -> fluidHolder.get(), properties);
         this.fluidHolder = fluidHolder;
         
         EldritchVoid.LOGGER.debug("Created VoidBucketItem for fluid: {}", fluidHolder.getId());
@@ -46,11 +41,12 @@ public class VoidBucketItem extends BucketItem {
         CompoundTag fluidTag = new CompoundTag();
         fluidTag.putString("id", fluidHolder.getId().toString());
         compoundTag.put("fluid", fluidTag);
-        // In NeoForge 1.21.5, setTag is replaced with different method
-        if (itemStack.hasTag()) {
-            itemStack.getTag().merge(compoundTag);
+        // In NeoForge 1.21.5, NBT handling has changed
+        CompoundTag existingTag = itemStack.getTag();
+        if (existingTag == null) {
+            itemStack.setTag(compoundTag);
         } else {
-            itemStack.getOrCreateTag().merge(compoundTag);
+            existingTag.merge(compoundTag);
         }
         return itemStack;
     }
