@@ -43,7 +43,8 @@ public class Registration {
      * @return The resource location
      */
     public static ResourceLocation location(String path) {
-        return ResourceLocation.parse(EldritchVoid.MOD_ID + ":" + path);
+        // NeoForge 1.21.5 uses constructor instead of parse() for compatibility
+        return new ResourceLocation(EldritchVoid.MOD_ID, path);
     }
     
     /**
