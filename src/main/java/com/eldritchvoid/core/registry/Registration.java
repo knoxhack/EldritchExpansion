@@ -43,8 +43,8 @@ public class Registration {
      * @return The resource location
      */
     public static ResourceLocation location(String path) {
-        // NeoForge 1.21.5 uses ResourceLocation.of() for compatibility
-        return ResourceLocation.of(EldritchVoid.MOD_ID + ":" + path, ':');
+        // NeoForge 1.21.5 uses proper ResourceLocation constructor
+        return new ResourceLocation(EldritchVoid.MOD_ID + ":" + path);
     }
     
     /**
