@@ -50,11 +50,12 @@ body, html {
 }
 
 h2 {
-  color: #ffffff;
+  color: var(--neon-green);
   margin-bottom: 1.5rem;
   border-bottom: 1px solid var(--dark-border);
   padding-bottom: 0.5rem;
   font-weight: 600;
+  text-shadow: var(--text-glow);
 }
 
 .card {
@@ -72,9 +73,10 @@ h2 {
 
 .card-header {
   background-color: #070b12 !important;
-  color: #ffffff !important;
+  color: var(--neon-green) !important;
   border-bottom: 1px solid var(--dark-border) !important;
   font-weight: bold;
+  text-shadow: var(--text-glow);
 }
 
 .form-control, .form-select {
@@ -173,8 +175,8 @@ h2 {
 }
 
 .table thead th {
-  background-color: #070b12 !important;
-  color: #ffffff !important;
+  background-color: #c0c0c0 !important;
+  color: #000000 !important;
   border-bottom: 2px solid var(--neon-green) !important;
   letter-spacing: 1px;
   font-weight: 600;
@@ -304,7 +306,8 @@ h2 {
     content: attr(data-label);
     float: left;
     font-weight: bold;
-    color: #ffffff;
+    color: var(--neon-green);
+    text-shadow: var(--text-glow);
   }
   
   .d-flex {
