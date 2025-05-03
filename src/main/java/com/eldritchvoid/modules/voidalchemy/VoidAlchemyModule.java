@@ -67,9 +67,13 @@ public class VoidAlchemyModule extends Module {
         // Initialize sub-components
         fluids = new VoidAlchemyFluids(MODULE_NAME);
         
-        // Load config values
-        enableVoidEssence = ModuleConfig.getConfig(MODULE_NAME, "enableVoidEssence").get();
-        voidPeeAmount = ModuleConfig.getConfig(MODULE_NAME, "voidPeeAmount").get();
+        // In NeoForge 1.21.5, config handling needs explicit type conversion
+        // Config values return as Optional<Object> and need to be cast to the appropriate type
+        var enableVoidEssenceConfig = ModuleConfig.getConfig(MODULE_NAME, "enableVoidEssence");
+        enableVoidEssence = enableVoidEssenceConfig.isPresent() ? (Boolean)enableVoidEssenceConfig.get() : true;
+        
+        var voidPeeAmountConfig = ModuleConfig.getConfig(MODULE_NAME, "voidPeeAmount");
+        voidPeeAmount = voidPeeAmountConfig.isPresent() ? (Integer)voidPeeAmountConfig.get() : 250;
         
         // Register fluids
         if (enableVoidEssence) {

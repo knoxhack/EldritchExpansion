@@ -98,7 +98,9 @@ public class BaseVoidEnergyStorage implements VoidEnergyStorage {
      * @param nbt The NBT tag to read from
      */
     public void readFromNBT(CompoundTag nbt) {
-        energy = nbt.getLong("Energy");
+        // In NeoForge 1.21.5, NBT methods return Optional values
+        // We need to handle this properly
+        energy = nbt.getLong("Energy").orElse(0L);
         
         if (energy > capacity) {
             energy = capacity;
