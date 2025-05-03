@@ -3,6 +3,11 @@ import { Container, Row, Col, Card, Button, Form, Alert, Table, Badge, Nav, Navb
 import axios from 'axios';
 import './App.css';
 
+// Import custom components
+import GradleTasks from './components/GradleTasks';
+import BuildHistory from './components/BuildHistory';
+import { initWebSocket, onWebSocketMessage } from './services/api';
+
 function App() {
   const [builds, setBuilds] = useState([
     {
@@ -138,6 +143,54 @@ function App() {
   // Build output and logs
   const [showBuildOutputModal, setShowBuildOutputModal] = useState(false);
   const [logFilter, setLogFilter] = useState('all'); // all, error, warning, info
+  
+  // Initialize WebSocket connection
+  useEffect(() => {
+    const socket = initWebSocket();
+    
+    const removeMessageHandler = onWebSocketMessage((data) => {
+      console.log('WebSocket message received:', data);
+      
+      // Handle different message types
+      if (data.type === 'BUILD_STARTED') {
+        // Handle build started
+        const newBuild = {
+          id: data.build.id,
+          name: data.build.name,
+          status: 'running',
+          startTime: data.build.startTime,
+          task: data.build.task
+        };
+        // Update build state as needed
+      } else if (data.type === 'BUILD_PROGRESS') {
+        // Handle build progress updates
+        setBuildOutput(prev => [
+          ...prev,
+          { 
+            type: data.logType || 'info', 
+            message: data.message, 
+            timestamp: new Date().toISOString() 
+          }
+        ]);
+        setBuildProgress(data.progress || 0);
+      } else if (data.type === 'BUILD_COMPLETED') {
+        // Handle build completed
+        setBuildInProgress(false);
+        setBuildProgress(100);
+        // Update build status
+      } else if (data.type === 'BUILD_FAILED') {
+        // Handle build failed
+        setBuildInProgress(false);
+        setBuildError(data.error || 'Build failed');
+      }
+    });
+    
+    // Clean up WebSocket connection on component unmount
+    return () => {
+      removeMessageHandler();
+      if (socket) socket.close();
+    };
+  }, []);
 
   const handleAddChange = () => {
     if (changeInput.trim() !== "") {
@@ -589,7 +642,9 @@ function App() {
             <Nav className="me-auto">
               <Nav.Link onClick={() => setActiveTab('builds')} active={activeTab === 'builds'} className="animate__animated animate__fadeIn">Builds</Nav.Link>
               <Nav.Link onClick={() => setActiveTab('create')} active={activeTab === 'create'} className="animate__animated animate__fadeIn animate__delay-1s">Create Build</Nav.Link>
-              <Nav.Link onClick={() => setActiveTab('modules')} active={activeTab === 'modules'} className="animate__animated animate__fadeIn animate__delay-2s">Modules</Nav.Link>
+              <Nav.Link onClick={() => setActiveTab('gradle')} active={activeTab === 'gradle'} className="animate__animated animate__fadeIn animate__delay-2s">Gradle Tasks</Nav.Link>
+              <Nav.Link onClick={() => setActiveTab('history')} active={activeTab === 'history'} className="animate__animated animate__fadeIn animate__delay-3s">Build History</Nav.Link>
+              <Nav.Link onClick={() => setActiveTab('modules')} active={activeTab === 'modules'} className="animate__animated animate__fadeIn animate__delay-4s">Modules</Nav.Link>
             </Nav>
           </Navbar.Collapse>
         </Container>
@@ -1038,6 +1093,32 @@ function App() {
             </div>
           );
         })()}
+
+        {activeTab === 'gradle' && (
+          <div className="animate__animated animate__fadeIn">
+            <h2 className="mb-4">Gradle Task Management</h2>
+            <p className="mb-4">
+              Run Gradle tasks directly from the build management interface. 
+              This allows you to execute builds, tests, and other tasks without using the command line.
+            </p>
+            <div id="gradle-tasks-container">
+              <GradleTasks />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'history' && (
+          <div className="animate__animated animate__fadeIn">
+            <h2 className="mb-4">Build Execution History</h2>
+            <p className="mb-4">
+              View the history of all executed Gradle builds and their results. 
+              This includes build status, timestamps, and detailed logs for debugging.
+            </p>
+            <div id="build-history-container">
+              <BuildHistory />
+            </div>
+          </div>
+        )}
       </Container>
       
       {/* Build Process Modal */}

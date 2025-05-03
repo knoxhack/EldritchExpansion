@@ -1,81 +1,59 @@
 const express = require('express');
-const { exec, spawn } = require('child_process');
-const path = require('path');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const { exec } = require('child_process');
 const WebSocket = require('ws');
-const http = require('http');
+const path = require('path');
 const fs = require('fs');
 
 // Create Express app
 const app = express();
-const port = process.env.PORT || 5001;
+const PORT = 5001;
 
-// Create HTTP server
-const server = http.createServer(app);
-
-// Create WebSocket server
-const wss = new WebSocket.Server({ server });
-
-// Apply middleware
+// Enable CORS
 app.use(cors());
+
+// Parse JSON bodies
 app.use(bodyParser.json());
 
-// Active builds
-const activeBuilds = {};
-const buildLogs = {};
-
-// For storing build statuses
-const BUILDS_FILE = path.join(__dirname, 'builds.json');
-
-// Load saved builds data
+// Store build data in memory
 let builds = [];
-try {
-  if (fs.existsSync(BUILDS_FILE)) {
-    builds = JSON.parse(fs.readFileSync(BUILDS_FILE, 'utf8'));
-  }
-} catch (error) {
-  console.error('Error loading builds file:', error);
-}
+let runningBuild = null;
+let buildId = 1;
 
-// Save builds data
-const saveBuilds = () => {
-  fs.writeFileSync(BUILDS_FILE, JSON.stringify(builds, null, 2));
-};
+// Create WebSocket server on a different port to avoid conflict with the HTTP server
+const WS_PORT = 5002;
+const wss = new WebSocket.Server({ port: WS_PORT });
+console.log(`WebSocket server running on port ${WS_PORT}`);
 
-// WebSocket connection handler
+// Handle WebSocket connections
 wss.on('connection', (ws) => {
   console.log('Client connected to WebSocket');
   
-  // Send active builds data to newly connected client
-  ws.send(JSON.stringify({ type: 'activeBuilds', data: activeBuilds }));
+  // Send current build status if there's a running build
+  if (runningBuild) {
+    ws.send(JSON.stringify({
+      type: 'BUILD_STARTED',
+      build: runningBuild
+    }));
+  }
   
   ws.on('close', () => {
     console.log('Client disconnected from WebSocket');
   });
 });
 
-// Broadcast build updates to all clients
-const broadcastBuildUpdate = (buildId, data) => {
+// Broadcast message to all connected clients
+const broadcast = (data) => {
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({
-        type: 'buildUpdate',
-        buildId,
-        data
-      }));
+      client.send(JSON.stringify(data));
     }
   });
 };
 
-// Helper to find root directory
-const findProjectRoot = () => {
-  // In production, this would be more sophisticated
-  // For now, we'll assume the main project is one directory up
-  return path.resolve(__dirname, '../../');
-};
+// API endpoints
 
-// API Routes
 // Get all builds
 app.get('/api/builds', (req, res) => {
   res.json(builds);
@@ -83,59 +61,29 @@ app.get('/api/builds', (req, res) => {
 
 // Get a specific build
 app.get('/api/builds/:id', (req, res) => {
-  const build = builds.find(b => b.id === parseInt(req.params.id));
+  const buildId = parseInt(req.params.id);
+  const build = builds.find(b => b.id === buildId);
+  
   if (!build) {
     return res.status(404).json({ error: 'Build not found' });
   }
+  
   res.json(build);
 });
 
-// Create a new build
-app.post('/api/builds', (req, res) => {
-  const newBuild = {
-    ...req.body,
-    id: builds.length > 0 ? Math.max(...builds.map(b => b.id)) + 1 : 1,
-    createdAt: new Date().toISOString()
-  };
-  builds.push(newBuild);
-  saveBuilds();
-  res.status(201).json(newBuild);
-});
-
-// Update a build
-app.put('/api/builds/:id', (req, res) => {
+// Get build logs
+app.get('/api/builds/:id/logs', (req, res) => {
   const buildId = parseInt(req.params.id);
-  const buildIndex = builds.findIndex(b => b.id === buildId);
+  const build = builds.find(b => b.id === buildId);
   
-  if (buildIndex === -1) {
+  if (!build) {
     return res.status(404).json({ error: 'Build not found' });
   }
   
-  builds[buildIndex] = {
-    ...builds[buildIndex],
-    ...req.body,
-    updatedAt: new Date().toISOString()
-  };
-  
-  saveBuilds();
-  res.json(builds[buildIndex]);
+  res.json(build.logs || []);
 });
 
-// Delete a build
-app.delete('/api/builds/:id', (req, res) => {
-  const buildId = parseInt(req.params.id);
-  const buildIndex = builds.findIndex(b => b.id === buildId);
-  
-  if (buildIndex === -1) {
-    return res.status(404).json({ error: 'Build not found' });
-  }
-  
-  const deletedBuild = builds.splice(buildIndex, 1)[0];
-  saveBuilds();
-  res.json(deletedBuild);
-});
-
-// Start a Gradle build
+// Start a build
 app.post('/api/builds/:id/start', (req, res) => {
   const buildId = parseInt(req.params.id);
   const build = builds.find(b => b.id === buildId);
@@ -144,236 +92,192 @@ app.post('/api/builds/:id/start', (req, res) => {
     return res.status(404).json({ error: 'Build not found' });
   }
   
-  // Check if build is already running
-  if (activeBuilds[buildId]) {
-    return res.status(400).json({ error: 'Build already in progress' });
+  if (runningBuild) {
+    return res.status(400).json({ error: 'A build is already running' });
   }
   
-  // Initialize build logs
-  buildLogs[buildId] = [];
+  // Set build as running
+  build.status = 'running';
+  build.startTime = new Date().toISOString();
+  build.logs = [
+    { type: 'info', message: `Starting build ${build.name} (${build.id})`, timestamp: new Date().toISOString() }
+  ];
   
-  // Find project root
-  const projectRoot = findProjectRoot();
-  
-  // Update build status
-  const updatedBuild = {
-    ...build,
-    status: 'In Progress',
-    previousStatus: build.status,
-    buildStartTime: new Date().toISOString()
+  runningBuild = {
+    id: build.id,
+    name: build.name,
+    status: 'running',
+    startTime: build.startTime,
+    task: 'build'
   };
   
-  builds = builds.map(b => b.id === buildId ? updatedBuild : b);
-  saveBuilds();
+  // Broadcast build started event
+  broadcast({
+    type: 'BUILD_STARTED',
+    build: runningBuild
+  });
   
-  // Create a new build process
-  try {
-    console.log(`Starting Gradle build for build ID ${buildId}`);
+  // Execute the Gradle build process
+  const buildProcess = exec('cd ../.. && ./gradlew build', (error, stdout, stderr) => {
+    build.endTime = new Date().toISOString();
+    build.duration = new Date(build.endTime) - new Date(build.startTime);
     
-    // Determine Gradle command based on platform
-    const isWindows = process.platform === 'win32';
-    const gradleCmd = isWindows ? 'gradlew.bat' : './gradlew';
+    if (error) {
+      build.status = 'failed';
+      build.logs.push(
+        { type: 'error', message: `Build failed: ${error.message}`, timestamp: new Date().toISOString() },
+        { type: 'error', message: stderr, timestamp: new Date().toISOString() }
+      );
+      
+      broadcast({
+        type: 'BUILD_FAILED',
+        error: error.message,
+        buildId: build.id
+      });
+    } else {
+      build.status = 'success';
+      build.logs.push(
+        { type: 'success', message: 'Build completed successfully', timestamp: new Date().toISOString() }
+      );
+      
+      broadcast({
+        type: 'BUILD_COMPLETED',
+        buildId: build.id
+      });
+      
+      // Try to find the build artifacts
+      try {
+        const jarFile = `eldritch-expansion-${build.version || '0.1.0'}.jar`;
+        build.jarFile = jarFile;
+      } catch (err) {
+        console.error('Error finding build artifacts:', err);
+      }
+    }
     
-    // Create log function
-    const logBuildOutput = (data, type = 'info') => {
+    runningBuild = null;
+  });
+  
+  // Stream the build output
+  buildProcess.stdout.on('data', (data) => {
+    const lines = data.toString().split('\n').filter(line => line.trim() !== '');
+    
+    lines.forEach(line => {
+      let logType = 'info';
+      
+      if (line.includes('ERROR') || line.includes('error') || line.includes('Exception')) {
+        logType = 'error';
+      } else if (line.includes('WARNING') || line.includes('warning') || line.includes('deprecated')) {
+        logType = 'warning';
+      } else if (line.includes('SUCCESS') || line.includes('success') || line.includes('BUILD SUCCESSFUL')) {
+        logType = 'success';
+      }
+      
       const logEntry = {
-        type,
-        message: data.toString().trim(),
+        type: logType,
+        message: line,
         timestamp: new Date().toISOString()
       };
       
-      buildLogs[buildId].push(logEntry);
+      build.logs.push(logEntry);
       
-      // Broadcast update
-      broadcastBuildUpdate(buildId, {
-        log: logEntry,
-        status: 'running',
-        progress: calculateProgress(data.toString())
+      broadcast({
+        type: 'BUILD_PROGRESS',
+        logType,
+        message: line,
+        buildId: build.id
       });
-    };
-    
-    // Spawn Gradle process
-    const gradleProcess = spawn(gradleCmd, ['build'], {
-      cwd: projectRoot,
-      shell: true
     });
-    
-    // Track process
-    activeBuilds[buildId] = {
-      process: gradleProcess,
-      startTime: new Date().toISOString(),
-      build: updatedBuild
-    };
-    
-    // Handle stdout
-    gradleProcess.stdout.on('data', (data) => {
-      logBuildOutput(data, 'info');
-    });
-    
-    // Handle stderr
-    gradleProcess.stderr.on('data', (data) => {
-      logBuildOutput(data, 'error');
-    });
-    
-    // Handle process completion
-    gradleProcess.on('close', (code) => {
-      console.log(`Gradle process exited with code ${code}`);
-      
-      // Build is complete - update status
-      completeBuild(buildId, code === 0);
-    });
-    
-    res.status(200).json({
-      message: 'Build started successfully',
-      buildId,
-      status: 'In Progress'
-    });
-    
-  } catch (error) {
-    console.error('Error starting Gradle build:', error);
-    
-    // Revert build status
-    builds = builds.map(b => b.id === buildId ? {
-      ...b,
-      status: b.previousStatus || 'Failed',
-      previousStatus: null,
-      error: error.message
-    } : b);
-    saveBuilds();
-    
-    res.status(500).json({ error: 'Failed to start build process' });
-  }
-});
-
-// Function to complete a build
-const completeBuild = (buildId, success) => {
-  // Get the build
-  const build = builds.find(b => b.id === buildId);
-  if (!build) return;
-  
-  // Calculate build duration
-  const startTime = new Date(build.buildStartTime);
-  const endTime = new Date();
-  const duration = endTime - startTime;
-  
-  // Update build status
-  const newStatus = success ? 'Completed' : 'Failed';
-  const updatedBuild = {
-    ...build,
-    status: newStatus,
-    previousStatus: null,
-    buildEndTime: endTime.toISOString(),
-    buildDuration: duration,
-    buildSuccess: success,
-    jarFile: success ? `eldritch-expansion-${build.version}.jar` : null
-  };
-  
-  // Save to builds array
-  builds = builds.map(b => b.id === buildId ? updatedBuild : b);
-  saveBuilds();
-  
-  // Broadcast completion
-  broadcastBuildUpdate(buildId, {
-    status: newStatus,
-    progress: success ? 100 : 0,
-    complete: true,
-    success,
-    log: {
-      type: success ? 'success' : 'error',
-      message: `Build ${success ? 'completed successfully' : 'failed'}`,
-      timestamp: new Date().toISOString()
-    }
   });
   
-  // Cleanup
-  delete activeBuilds[buildId];
-};
-
-// Function to calculate progress percentage from Gradle output
-const calculateProgress = (output) => {
-  // In a real implementation, this would parse Gradle output
-  // to determine progress. For now, we'll use a simple heuristic
+  buildProcess.stderr.on('data', (data) => {
+    const lines = data.toString().split('\n').filter(line => line.trim() !== '');
+    
+    lines.forEach(line => {
+      const logEntry = {
+        type: 'error',
+        message: line,
+        timestamp: new Date().toISOString()
+      };
+      
+      build.logs.push(logEntry);
+      
+      broadcast({
+        type: 'BUILD_PROGRESS',
+        logType: 'error',
+        message: line,
+        buildId: build.id
+      });
+    });
+  });
   
-  if (output.includes('Building')) return 10;
-  if (output.includes('Compiling')) return 30;
-  if (output.includes('Executing')) return 50;
-  if (output.includes('Generating')) return 70;
-  if (output.includes('Finalizing')) return 90;
-  
-  return -1; // No progress update
-};
+  res.json({ message: 'Build started', buildId: build.id });
+});
 
-// Abort a running build
+// Abort a build
 app.post('/api/builds/:id/abort', (req, res) => {
   const buildId = parseInt(req.params.id);
+  const build = builds.find(b => b.id === buildId);
   
-  if (!activeBuilds[buildId]) {
-    return res.status(400).json({ error: 'No active build found with this ID' });
+  if (!build) {
+    return res.status(404).json({ error: 'Build not found' });
   }
   
-  try {
-    // Kill the process
-    activeBuilds[buildId].process.kill();
-    
-    // Log the abort
-    const logEntry = {
-      type: 'warning',
-      message: 'Build manually aborted by user',
-      timestamp: new Date().toISOString()
-    };
-    
-    buildLogs[buildId].push(logEntry);
-    
-    // Complete the build as failed
-    completeBuild(buildId, false);
-    
-    res.status(200).json({ message: 'Build aborted successfully' });
-  } catch (error) {
-    console.error('Error aborting build:', error);
-    res.status(500).json({ error: 'Failed to abort build' });
+  if (!runningBuild || runningBuild.id !== build.id) {
+    return res.status(400).json({ error: 'This build is not currently running' });
   }
+  
+  // Execute the command to kill the Gradle process
+  exec('pkill -f gradlew', (error) => {
+    // Update build status
+    build.status = 'aborted';
+    build.endTime = new Date().toISOString();
+    build.duration = new Date(build.endTime) - new Date(build.startTime);
+    
+    build.logs.push(
+      { type: 'warning', message: 'Build manually aborted by user', timestamp: new Date().toISOString() }
+    );
+    
+    broadcast({
+      type: 'BUILD_ABORTED',
+      buildId: build.id
+    });
+    
+    runningBuild = null;
+    
+    res.json({ message: 'Build aborted', buildId: build.id });
+  });
 });
 
-// Get build logs
-app.get('/api/builds/:id/logs', (req, res) => {
-  const buildId = parseInt(req.params.id);
-  
-  if (!buildLogs[buildId]) {
-    return res.status(404).json({ error: 'No logs found for this build' });
-  }
-  
-  res.json(buildLogs[buildId]);
-});
-
-// List available Gradle tasks
+// Get Gradle tasks
 app.get('/api/gradle/tasks', (req, res) => {
-  const projectRoot = findProjectRoot();
-  
-  exec('./gradlew tasks --all', { cwd: projectRoot }, (error, stdout, stderr) => {
+  exec('cd ../.. && ./gradlew tasks --all', (error, stdout, stderr) => {
     if (error) {
-      console.error('Error listing Gradle tasks:', error);
-      return res.status(500).json({ error: 'Failed to list Gradle tasks' });
+      return res.status(500).json({ error: 'Failed to get Gradle tasks', details: error.message });
     }
     
-    // Parse output to extract task names and descriptions
+    // Parse the tasks output
     const tasks = [];
     const lines = stdout.split('\n');
-    let inTaskSection = false;
+    let currentGroup = '';
     
     for (const line of lines) {
-      if (line.includes('----')) {
-        inTaskSection = true;
+      // Skip empty lines
+      if (!line.trim()) continue;
+      
+      // Task group headers
+      if (line.match(/^-+$/) && lines[lines.indexOf(line) - 1]) {
+        currentGroup = lines[lines.indexOf(line) - 1].trim();
         continue;
       }
       
-      if (inTaskSection && line.trim() && !line.includes('All tasks runnable from root project')) {
-        const match = line.match(/^([a-zA-Z0-9:]+)\s+-\s+(.*)$/);
-        if (match) {
-          tasks.push({
-            name: match[1].trim(),
-            description: match[2].trim()
-          });
-        }
+      // Task entries
+      const taskMatch = line.match(/^(\w+)\s+-\s+(.+)$/);
+      if (taskMatch) {
+        tasks.push({
+          name: taskMatch[1],
+          description: taskMatch[2],
+          group: currentGroup
+        });
       }
     }
     
@@ -381,30 +285,155 @@ app.get('/api/gradle/tasks', (req, res) => {
   });
 });
 
-// Run a specific Gradle task
+// Run a Gradle task
 app.post('/api/gradle/run', (req, res) => {
   const { task } = req.body;
+  
   if (!task) {
-    return res.status(400).json({ error: 'No task specified' });
+    return res.status(400).json({ error: 'Task name is required' });
   }
   
-  const projectRoot = findProjectRoot();
+  if (runningBuild) {
+    return res.status(400).json({ error: 'A build is already running' });
+  }
   
-  exec(`./gradlew ${task}`, { cwd: projectRoot }, (error, stdout, stderr) => {
+  // Create a new build record
+  const build = {
+    id: buildId++,
+    name: `Task: ${task}`,
+    status: 'running',
+    startTime: new Date().toISOString(),
+    task,
+    logs: [
+      { type: 'info', message: `Starting Gradle task: ${task}`, timestamp: new Date().toISOString() }
+    ]
+  };
+  
+  builds.push(build);
+  
+  runningBuild = {
+    id: build.id,
+    name: build.name,
+    status: 'running',
+    startTime: build.startTime,
+    task
+  };
+  
+  // Broadcast build started event
+  broadcast({
+    type: 'BUILD_STARTED',
+    build: runningBuild
+  });
+  
+  // Execute the Gradle task
+  const buildProcess = exec(`cd ../.. && ./gradlew ${task}`, (error, stdout, stderr) => {
+    build.endTime = new Date().toISOString();
+    build.duration = new Date(build.endTime) - new Date(build.startTime);
+    
     if (error) {
-      console.error(`Error running Gradle task ${task}:`, error);
-      return res.status(500).json({ error: `Failed to run task: ${error.message}` });
+      build.status = 'failed';
+      build.logs.push(
+        { type: 'error', message: `Task failed: ${error.message}`, timestamp: new Date().toISOString() },
+        { type: 'error', message: stderr, timestamp: new Date().toISOString() }
+      );
+      
+      broadcast({
+        type: 'BUILD_FAILED',
+        error: error.message,
+        buildId: build.id
+      });
+    } else {
+      build.status = 'success';
+      build.logs.push(
+        { type: 'success', message: 'Task completed successfully', timestamp: new Date().toISOString() }
+      );
+      
+      broadcast({
+        type: 'BUILD_COMPLETED',
+        buildId: build.id
+      });
     }
     
-    res.json({
-      task,
-      success: true,
-      output: stdout
+    runningBuild = null;
+  });
+  
+  // Stream the task output
+  buildProcess.stdout.on('data', (data) => {
+    const lines = data.toString().split('\n').filter(line => line.trim() !== '');
+    
+    lines.forEach(line => {
+      let logType = 'info';
+      
+      if (line.includes('ERROR') || line.includes('error') || line.includes('Exception')) {
+        logType = 'error';
+      } else if (line.includes('WARNING') || line.includes('warning') || line.includes('deprecated')) {
+        logType = 'warning';
+      } else if (line.includes('SUCCESS') || line.includes('success') || line.includes('BUILD SUCCESSFUL')) {
+        logType = 'success';
+      }
+      
+      const logEntry = {
+        type: logType,
+        message: line,
+        timestamp: new Date().toISOString()
+      };
+      
+      build.logs.push(logEntry);
+      
+      broadcast({
+        type: 'BUILD_PROGRESS',
+        logType,
+        message: line,
+        buildId: build.id,
+        progress: calculateProgress(line, task)
+      });
     });
+  });
+  
+  buildProcess.stderr.on('data', (data) => {
+    const lines = data.toString().split('\n').filter(line => line.trim() !== '');
+    
+    lines.forEach(line => {
+      const logEntry = {
+        type: 'error',
+        message: line,
+        timestamp: new Date().toISOString()
+      };
+      
+      build.logs.push(logEntry);
+      
+      broadcast({
+        type: 'BUILD_PROGRESS',
+        logType: 'error',
+        message: line,
+        buildId: build.id
+      });
+    });
+  });
+  
+  res.json({ 
+    message: 'Task started', 
+    buildId: build.id,
+    output: `Starting Gradle task: ${task}` 
   });
 });
 
+// Helper function to estimate build progress based on output
+function calculateProgress(line, task) {
+  // This is a simple heuristic, a real implementation would use more sophisticated tracking
+  if (line.includes('BUILD SUCCESSFUL')) {
+    return 100;
+  } else if (line.includes('Finished')) {
+    return 90;
+  } else if (line.includes('Executing')) {
+    return 50;
+  } else if (line.includes('Starting')) {
+    return 10;
+  }
+  return null; // No progress update
+}
+
 // Start the server
-server.listen(port, () => {
-  console.log(`Build Management API server listening on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`API server running on port ${PORT}`);
 });
