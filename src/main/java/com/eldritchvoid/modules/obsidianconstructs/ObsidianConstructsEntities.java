@@ -28,18 +28,20 @@ public class ObsidianConstructsEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<Monster>> OBSIDIAN_GOLEM = Registration.ENTITIES.register(
             "obsidian_golem", 
             () -> {
-                // In NeoForge 1.21.5, we use a slightly different approach for entity registration
-                // We create a string ID for the entity
-                String entityId = EldritchVoid.MOD_ID + ":obsidian_golem";
+                // In NeoForge 1.21.5, we need a specific approach to entity registration
                 
-                // Create a Builder with the entity factory (null for now, will be implemented later)
-                EntityType.Builder<Entity> builder = EntityType.Builder.of((type, level) -> null, MobCategory.MONSTER)
-                        .sized(1.4F, 2.7F)
-                        .clientTrackingRange(10);
+                // First create an entity factory that returns null for now
+                // This will be implemented properly later
+                EntityType.EntityFactory<Monster> entityFactory = (type, level) -> null;
                 
-                // Build the entity type with the string ID
+                // Create the EntityType with specific size and tracking parameters
+                // We need to cast to ensure proper type checking with Monster
                 @SuppressWarnings("unchecked")
-                EntityType<Monster> entityType = (EntityType<Monster>) builder.build(entityId);
+                EntityType<Monster> entityType = (EntityType<Monster>) EntityType.Builder
+                    .of(entityFactory, MobCategory.MONSTER)
+                    .sized(1.4F, 2.7F)
+                    .clientTrackingRange(10)
+                    .build(EldritchVoid.MOD_ID + ":obsidian_golem");
                 
                 return entityType;
             });
