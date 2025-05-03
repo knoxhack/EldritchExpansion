@@ -43,7 +43,7 @@ public class Registration {
      * @return The resource location
      */
     public static ResourceLocation location(String path) {
-        return new ResourceLocation(EldritchVoid.MOD_ID + ":" + path);
+        return ResourceLocation.parse(EldritchVoid.MOD_ID + ":" + path);
     }
     
     /**

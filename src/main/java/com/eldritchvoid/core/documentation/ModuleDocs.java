@@ -209,8 +209,8 @@ public class ModuleDocs {
      */
     public static ResourceLocation getDocResourceLocation(String moduleName, String path) {
         String fullPath = "documentation/" + moduleName + "/" + path;
-        // Use ResourceLocation constructor correctly for NeoForge 1.21.5
-        return new ResourceLocation(EldritchVoid.MOD_ID + ":" + fullPath);
+        // Use ResourceLocation.parse as recommended for NeoForge 1.21.5
+        return ResourceLocation.parse(EldritchVoid.MOD_ID + ":" + fullPath);
     }
     
     /**
