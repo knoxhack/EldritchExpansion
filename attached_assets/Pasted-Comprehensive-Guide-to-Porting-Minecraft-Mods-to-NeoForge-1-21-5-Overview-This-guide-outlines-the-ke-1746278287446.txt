@@ -1,0 +1,143 @@
+Comprehensive Guide to Porting Minecraft Mods to NeoForge 1.21.5
+Overview
+This guide outlines the key changes and strategies for updating mods to be compatible with NeoForge 1.21.5, focusing on API changes, data handling, and common migration patterns.
+
+Major API Changes
+1. Optional Handling
+NeoForge 1.21.5 has moved away from Optional wrappers in favor of direct value returns:
+
+// OLD in 1.20:
+Optional<Integer> value = tag.getInt("key");
+int result = value.orElse(defaultValue);
+// NEW in 1.21.5:
+int result = tag.getInt("key").orElse(defaultValue);
+// OR in some cases:
+int result = tag.contains("key") ? tag.getInt("key") : defaultValue;
+2. ResourceLocation Changes
+Resource location creation has changed:
+
+// OLD:
+ResourceLocation location = new ResourceLocation("modid", "path");
+// NEW:
+ResourceLocation location = ResourceLocation.parse("modid:path");
+3. Registry Access
+Registry access patterns have been updated:
+
+// OLD:
+Registry<Item> itemRegistry = ForgeRegistries.ITEMS;
+// NEW:
+Registry<Item> itemRegistry = BuiltInRegistries.ITEM;
+4. Tag Type Handling
+Tag type constants have been removed, requiring instanceof checks:
+
+// OLD:
+if (tag.contains("key", Tag.TAG_COMPOUND)) {
+    CompoundTag compoundTag = tag.getCompound("key");
+}
+// NEW:
+if (tag.contains("key")) {
+    Tag rawTag = tag.get("key");
+    if (rawTag instanceof CompoundTag) {
+        CompoundTag compoundTag = (CompoundTag) rawTag;
+    }
+}
+5. Holder-Based References
+Many systems now use Holder references instead of direct objects:
+
+// OLD:
+SoundEvent sound = SoundEvents.ARMOR_EQUIP_IRON;
+// NEW:
+Holder<SoundEvent> soundHolder = Holder.direct(SoundEvents.ARMOR_EQUIP_IRON);
+6. Equipment Slot Changes
+Armor handling has changed from ArmorItem.Type to EquipmentSlot:
+
+// OLD:
+new ArmorItem(material, ArmorItem.Type.HELMET, properties);
+// NEW:
+new ArmorItem(material, EquipmentSlot.HEAD, properties);
+Data Structure Adaptations
+1. NBT Data Handling
+For NBT data persistence:
+
+Use proper instanceof checks for tag types
+Handle direct returns instead of optional returns
+Create helper methods for cross-version compatibility
+Update put/get methods for NBT tags
+// Helper example
+public static int getInt(CompoundTag tag, String key, int defaultValue) {
+    if (tag.contains(key)) {
+        return tag.getInt(key).orElse(defaultValue);
+    }
+    return defaultValue;
+}
+2. Component Systems
+Component-based systems need adapter patterns:
+
+// Adapter pattern for components
+public class ComponentAdapter implements INewComponent {
+    private final LegacyComponent component;
+    
+    // Implement new interface methods using legacy component
+}
+Configuration and Project Setup
+1. Update mods.toml
+Update FML language provider:
+
+loaderVersion="[47,)"
+license="Your License"
+[[dependencies.yourmodid]]
+    modId="neoforge"
+    mandatory=true
+    versionRange="[21.5,)"
+    ordering="NONE"
+    side="BOTH"
+2. Gradle Changes
+Update Gradle configurations:
+
+minecraft {
+    mappings channel: 'official', version: '1.21.5'
+}
+dependencies {
+    minecraft 'net.neoforged:neoforge:21.5.58-beta'
+}
+Common Patterns for Migration
+1. Registry Based Type Checking
+Use registry-based approaches for item type checking:
+
+// OLD:
+if (item instanceof CustomItem) { ... }
+// NEW:
+if (BuiltInRegistries.ITEM.getKey(item).getNamespace().equals("yourmodid")) { ... }
+2. Factory Methods
+Use factories to handle component creation:
+
+public static RocketComponent createComponent(RocketComponentType type, int tier) {
+    // Create component based on type with compatibility handling
+}
+3. Capability Adaptation
+// Capability handling
+if (itemStack.getCapability(YourCapability.CAPABILITY) instanceof IYourCapability cap) {
+    // Use capability
+}
+Testing and Verification
+Create unit tests specifically for NBT serialization/deserialization
+Test cross-module interfaces and implementations
+Verify rendering and client-side functionality separately
+Create comprehensive component test cases
+Use JUnit tests where possible to validate component logic
+Common Issues and Solutions
+NBT Handling: Wrap tag access in proper type checks
+Registry Changes: Use resource location based identity for mod elements
+Interface Implementations: Create adapter classes for legacy interfaces
+Sound Events: Use direct holder references
+ResourceLocation Usage: Use parse method instead of constructors
+Capability Systems: Update capability providers to handle the new API
+Module-Specific Adaptations
+For modular projects:
+
+Update core API interfaces first
+Create compatibility helper classes in core module
+Implement adapters for cross-version compatibility
+Update implementation modules one at a time
+Test each module independently before integration
+By following these patterns and adaptations, you can successfully port your mod to NeoForge 1.21.5 while maintaining compatibility and introducing minimal breaking changes to your API.

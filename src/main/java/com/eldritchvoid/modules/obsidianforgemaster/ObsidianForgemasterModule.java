@@ -1,9 +1,10 @@
 package com.eldritchvoid.modules.obsidianforgemaster;
 
 import com.eldritchvoid.core.Module;
+import com.eldritchvoid.core.config.ModuleConfig;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 
@@ -13,35 +14,39 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
  */
 public class ObsidianForgemasterModule extends Module {
 
-    /**
-     * Initialize the module.
-     */
+    public ObsidianForgemasterModule(IEventBus modBus) {
+        super("obsidianforgemaster", modBus);
+        
+        // Register additional events
+        modBus.addListener(this::addCreative);
+    }
+    
     @Override
-    public void init() {
-        super.init();
-        
-        // Get the mod event bus
-        IEventBus modEventBus = ModLoadingContext.get().getActiveContainer().getEventBus();
-        
-        // Register lifecycle events
-        modEventBus.addListener(this::setup);
-        modEventBus.addListener(this::addCreative);
-        
+    protected void setupConfig(ModuleConfig config) {
+        // Configure module settings
+        config.addBooleanParameter("enable_forging", true, "Enable forging mechanics");
+        config.addIntParameter("forge_durability", 2000, "Base durability for obsidian forges");
+    }
+    
+    @Override
+    protected void registerContent() {
         // Register blocks and items
         ObsidianForgemasterBlocks.register();
         ObsidianForgemasterItems.register();
         
-        log("Initialized Obsidian Forgemaster module");
+        log("Registered Obsidian Forgemaster content");
     }
     
-    /**
-     * Setup the module during the common setup phase.
-     *
-     * @param event The common setup event
-     */
-    private void setup(final FMLCommonSetupEvent event) {
+    @Override
+    protected void init(FMLCommonSetupEvent event) {
         // Setup common functionality
         log("Setting up Obsidian Forgemaster module");
+    }
+    
+    @Override
+    protected void clientInit(FMLClientSetupEvent event) {
+        // Client-side initialization
+        log("Setting up Obsidian Forgemaster client features");
     }
     
     /**
@@ -50,6 +55,8 @@ public class ObsidianForgemasterModule extends Module {
      * @param event The creative tab contents event
      */
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
+        if (!isEnabled()) return;
+        
         if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
             // Add forge blocks to the building blocks tab
             // Will be expanded when proper registrations are implemented
@@ -62,40 +69,11 @@ public class ObsidianForgemasterModule extends Module {
     }
     
     /**
-     * Get the ID of the module.
-     *
-     * @return The module ID
-     */
-    @Override
-    public String getId() {
-        return "obsidianforgemaster";
-    }
-    
-    /**
      * Get the display name of the module.
      *
      * @return The module display name
      */
-    @Override
     public String getDisplayName() {
         return "Obsidian Forgemaster";
-    }
-    
-    /**
-     * Called when the module is enabled.
-     */
-    @Override
-    public void onEnable() {
-        super.onEnable();
-        // Additional enabling logic
-    }
-    
-    /**
-     * Called when the module is disabled.
-     */
-    @Override
-    public void onDisable() {
-        super.onDisable();
-        // Additional disabling logic
     }
 }

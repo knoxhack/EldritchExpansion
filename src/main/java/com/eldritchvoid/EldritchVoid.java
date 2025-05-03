@@ -67,6 +67,8 @@ public class EldritchVoid {
     private void initializeModules(IEventBus modEventBus) {
         // Register modules here
         moduleManager.registerModule(new com.eldritchvoid.modules.voidalchemy.VoidAlchemyModule(modEventBus));
+        moduleManager.registerModule(new com.eldritchvoid.modules.eldritchartifacts.EldritchArtifactsModule(modEventBus));
+        moduleManager.registerModule(new com.eldritchvoid.modules.obsidianforgemaster.ObsidianForgemasterModule(modEventBus));
         
         // Initialize all registered modules
         moduleManager.initializeModules();

@@ -169,6 +169,58 @@ public class ModuleConfig {
     }
     
     /**
+     * Add a boolean parameter to the configuration.
+     * Simplified method for the new module API.
+     *
+     * @param path The parameter path
+     * @param defaultValue The default value
+     * @param comment The comment for this parameter
+     * @return The config value
+     */
+    public ConfigValue<Boolean> addBooleanParameter(String path, boolean defaultValue, String comment) {
+        return defineBool(path, defaultValue, comment);
+    }
+    
+    /**
+     * Add an integer parameter to the configuration.
+     * Simplified method for the new module API.
+     *
+     * @param path The parameter path
+     * @param defaultValue The default value
+     * @param comment The comment for this parameter
+     * @return The config value
+     */
+    public ConfigValue<Integer> addIntParameter(String path, int defaultValue, String comment) {
+        return defineInt(path, defaultValue, comment);
+    }
+    
+    /**
+     * Add a double parameter to the configuration.
+     * Simplified method for the new module API.
+     *
+     * @param path The parameter path
+     * @param defaultValue The default value
+     * @param comment The comment for this parameter
+     * @return The config value
+     */
+    public ConfigValue<Double> addDoubleParameter(String path, double defaultValue, String comment) {
+        return defineDouble(path, defaultValue, Double.MIN_VALUE, Double.MAX_VALUE, comment);
+    }
+    
+    /**
+     * Add a string parameter to the configuration.
+     * Simplified method for the new module API.
+     *
+     * @param path The parameter path
+     * @param defaultValue The default value
+     * @param comment The comment for this parameter
+     * @return The config value
+     */
+    public ConfigValue<String> addStringParameter(String path, String defaultValue, String comment) {
+        return defineString(path, defaultValue, comment);
+    }
+    
+    /**
      * Build the configuration specification and register it with NeoForge.
      */
     public void build() {
