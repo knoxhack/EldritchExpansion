@@ -561,6 +561,29 @@ app.post('/api/github/release', async (req, res) => {
     // Create a simulated GitHub release URL
     const githubReleaseUrl = `https://github.com/yourusername/eldritch-expansion/releases/tag/v${versionString}`;
     
+    // Generate module-specific JAR files for the release
+    const moduleJars = [
+      {
+        name: "Eldritch Core",
+        jarFile: `eldritch-expansion-core-${fullVersion}.jar`,
+        description: "Core module required by all other modules"
+      }
+    ];
+    
+    // For each additional module in the build, create a separate JAR
+    if (build.modules && build.modules.length > 0) {
+      build.modules.forEach(moduleName => {
+        if (moduleName !== "Eldritch Core") {
+          const moduleId = moduleName.toLowerCase().replace(/\s+/g, '-');
+          moduleJars.push({
+            name: moduleName,
+            jarFile: `eldritch-expansion-${moduleId}-${fullVersion}.jar`,
+            description: `${moduleName} module for Eldritch Expansion. Requires Eldritch Core.`
+          });
+        }
+      });
+    }
+    
     // Update the build record with release info
     build.version = versionString;
     build.fullVersion = fullVersion;
@@ -568,6 +591,7 @@ app.post('/api/github/release', async (req, res) => {
     build.releaseNotes = releaseNotes;
     build.releaseDate = releaseDate;
     build.isPrerelease = isPrerelease || false;
+    build.moduleJars = moduleJars;
     
     // In a real implementation, we would also upload the JAR file to the GitHub release
     
@@ -588,7 +612,8 @@ app.post('/api/github/release', async (req, res) => {
         fullVersion,
         githubReleaseUrl,
         releaseDate,
-        isPrerelease: build.isPrerelease
+        isPrerelease: build.isPrerelease,
+        moduleJars: moduleJars
       }
     });
     
@@ -600,7 +625,8 @@ app.post('/api/github/release', async (req, res) => {
         fullVersion,
         githubReleaseUrl,
         releaseDate,
-        isPrerelease: build.isPrerelease
+        isPrerelease: build.isPrerelease,
+        moduleJars: moduleJars
       }
     });
   } catch (error) {

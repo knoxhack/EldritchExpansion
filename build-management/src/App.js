@@ -20,12 +20,12 @@ function App() {
       previousStatus: null,
       jarFile: null,
       modules: [
-        "VoidAlchemy", 
-        "ObsidianForgemaster", 
-        "EldritchArtifacts", 
-        "VoidCorruption", 
-        "EldritchArcana",
-        "ObsidianConstructs"
+        "Eldritch Core",
+        "Eldritch Arcana", 
+        "Void Alchemy", 
+        "Obsidian Forgemaster", 
+        "Void Corruption", 
+        "Obsidian Constructs"
       ],
       changes: [
         "Created initial module structure",

@@ -43,7 +43,7 @@ const BuildDashboard = ({
   
   // Handle GitHub release 
   const handleCreateGitHubRelease = () => {
-    setReleaseNotes(`# Release Notes for version ${versionInfo.versionString}
+    setReleaseNotes(`# Eldritch Expansion Release Notes for version ${versionInfo.versionString}
 
 ## New Features
 - 
@@ -55,8 +55,12 @@ const BuildDashboard = ({
 - 
 
 ## Modules Updated
-- Core
-- VoidAlchemy
+- Eldritch Core
+- Eldritch Arcana
+- Void Alchemy
+- Obsidian Forgemaster
+- Void Corruption
+- Obsidian Constructs
 `);
     setIsPrerelease(false);
     setReleaseSuccess(false);
@@ -132,7 +136,7 @@ const BuildDashboard = ({
           <h4>Module Status</h4>
           
           <div className="module-list">
-            {['Core', 'Power', 'Machinery', 'Biotech', 'Construction', 'Robotics', 'Space'].map(module => (
+            {['Eldritch Core', 'Eldritch Arcana', 'Void Alchemy', 'Obsidian Forgemaster', 'Void Corruption', 'Obsidian Constructs', 'Eldritch Dimensions', 'Void Tech', 'Eldritch Bestiary', 'Void Cultists'].map(module => (
               <Row key={module} className="py-2 module-row">
                 <Col>
                   <span className="module-name">{module}</span>
@@ -235,15 +239,36 @@ const BuildDashboard = ({
         </Modal.Header>
         <Modal.Body>
           {releaseSuccess ? (
-            <div className="text-center p-4">
-              <h4 className="text-success mb-3">Release Created Successfully!</h4>
-              <p className="mb-0">
+            <div className="p-4">
+              <h4 className="text-success mb-3 text-center">Release Created Successfully!</h4>
+              <p className="mb-0 text-center">
                 Version <strong>{versionInfo.fullVersion}</strong> has been released to GitHub.
               </p>
-              <p className="mt-2">
+              <p className="mb-3 text-center">
                 <a href={versionInfo.lastRelease?.url} target="_blank" rel="noopener noreferrer">
                   View Release on GitHub
                 </a>
+              </p>
+              
+              <h5 className="mt-4 mb-3">Generated Module JAR Files:</h5>
+              <div className="bg-light p-3 rounded">
+                {versionInfo.moduleJars ? (
+                  <ul className="mb-0">
+                    {versionInfo.moduleJars.map((jar, index) => (
+                      <li key={index} className="mb-2">
+                        <strong>{jar.name}:</strong> {jar.jarFile}
+                        <div className="text-muted small">{jar.description}</div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mb-0">
+                    <strong>Eldritch Core:</strong> eldritch-expansion-core-{versionInfo.fullVersion}.jar
+                  </p>
+                )}
+              </div>
+              <p className="mt-3 mb-0 text-muted small">
+                Each module is packaged as an independent JAR file. All modules require the Eldritch Core module.
               </p>
             </div>
           ) : (
