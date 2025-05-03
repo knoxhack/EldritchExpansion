@@ -38,9 +38,9 @@ public class VoidAlchemyFluids {
     public static final DeferredHolder<Fluid, FlowingFluid> FLOWING_VOID_ESSENCE = FLUIDS.register(
             "flowing_void_essence", () -> new BaseFlowingFluid.Flowing(VoidAlchemyFluids.voidEssenceProperties()));
     
-    // Void Essence Bucket
+    // Void Essence Bucket - using proper parameter for NeoForge 1.21.5
     public static final DeferredHolder<Item, Item> VOID_ESSENCE_BUCKET = Registration.ITEMS.register(
-            "void_essence_bucket", () -> new BucketItem(() -> VOID_ESSENCE.value(), new Item.Properties()
+            "void_essence_bucket", () -> new BucketItem(VOID_ESSENCE::get, new Item.Properties()
                     .craftRemainder(Items.BUCKET)
                     .stacksTo(1)));
     

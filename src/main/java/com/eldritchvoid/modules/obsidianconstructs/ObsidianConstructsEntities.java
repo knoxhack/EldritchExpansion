@@ -23,12 +23,12 @@ public class ObsidianConstructsEntities {
             net.minecraft.core.registries.Registries.ITEM, EldritchVoid.MOD_ID);
     
     // Obsidian Golem - a strong but slow guardian construct
-    public static final DeferredHolder<EntityType<?>, EntityType<Entity>> OBSIDIAN_GOLEM = Registration.ENTITIES.register(
+    public static final DeferredHolder<EntityType<?>, EntityType<Monster>> OBSIDIAN_GOLEM = Registration.ENTITIES.register(
             "obsidian_golem", 
-            () -> EntityType.Builder.of((type, level) -> null, MobCategory.MISC)
+            () -> (EntityType<Monster>)EntityType.Builder.of((type, level) -> null, MobCategory.MONSTER)
                     .sized(1.4F, 2.7F)
                     .clientTrackingRange(10)
-                    .build("obsidian_golem"));
+                    .build(Registration.location("obsidian_golem")));
     
     /**
      * Register all entities.
@@ -54,7 +54,7 @@ public class ObsidianConstructsEntities {
     private static void registerEntityAttributes(EntityAttributeCreationEvent event) {
         // We'll create attribute providers for our entities when they're fully implemented
         // For now, this is just a placeholder
-        event.put((EntityType<? extends Monster>) OBSIDIAN_GOLEM.get(), 
+        event.put(OBSIDIAN_GOLEM.get(), 
                 Monster.createMonsterAttributes()
                         .add(Attributes.MAX_HEALTH, 100.0D)
                         .add(Attributes.MOVEMENT_SPEED, 0.2D)
