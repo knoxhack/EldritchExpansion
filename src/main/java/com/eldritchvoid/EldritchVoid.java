@@ -8,10 +8,15 @@ import com.eldritchvoid.core.network.ModuleNetwork;
 import com.eldritchvoid.core.registry.Registration;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Main class for the Eldritch Void mod.
@@ -28,6 +33,12 @@ public class EldritchVoid {
      * The mod logger.
      */
     public static final Logger LOGGER = LoggerFactory.getLogger("EldritchVoid");
+    
+    /**
+     * Map to store config specs for registration.
+     * This is used by the ModuleConfig system for NeoForge 1.21.5 compatibility.
+     */
+    public static final Map<String, ModConfigSpec> CONFIG_SPECS = new HashMap<>();
     
     private static ModuleManager moduleManager;
     

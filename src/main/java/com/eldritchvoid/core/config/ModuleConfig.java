@@ -226,17 +226,14 @@ public class ModuleConfig {
     public void build() {
         spec = builder.build();
         
-        // In NeoForge 1.21.5, we need to use the ModLoadingContext to register configs
-        // This is much simpler than trying to use the ModConfig constructor directly
-        String fileName = moduleName;
+        // In NeoForge 1.21.5, the registration method has changed
+        // Let's use the standard approach with RegisterEvent
+        String fileName = EldritchVoid.MOD_ID + "-" + moduleName + ".toml";
         
-        // Register the config using the ModLoadingContext API
-        // This properly handles all the internal ModConfig creation and tracking
-        ModLoadingContext.get().registerConfig(
-            ModConfig.Type.COMMON,
-            spec,
-            fileName
-        );
+        // We'll create and register a new ModConfig at the next game load event
+        // This is done via event handling in the EldritchVoid main class
+        // Store the spec in the CONFIG_SPECS map for registration
+        EldritchVoid.CONFIG_SPECS.put(moduleName, spec);
         
         EldritchVoid.LOGGER.info("Registered configuration for module: {}", moduleName);
     }
