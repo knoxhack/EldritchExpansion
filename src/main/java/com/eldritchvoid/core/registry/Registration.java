@@ -31,7 +31,8 @@ public class Registration {
      * @return A ResourceLocation with the mod ID as namespace
      */
     public static ResourceLocation location(String path) {
-        return new ResourceLocation(EldritchVoid.MOD_ID + ":" + path);
+        // In NeoForge 1.21.5, we need to use the fromString method for creating ResourceLocations
+        return ResourceLocation.fromString(EldritchVoid.MOD_ID + ":" + path);
     }
     
     /**

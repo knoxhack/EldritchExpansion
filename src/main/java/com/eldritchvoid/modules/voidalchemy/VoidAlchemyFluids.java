@@ -40,7 +40,7 @@ public class VoidAlchemyFluids {
     
     // Void Essence Bucket
     public static final DeferredHolder<Item, Item> VOID_ESSENCE_BUCKET = Registration.ITEMS.register(
-            "void_essence_bucket", () -> new BucketItem(VOID_ESSENCE, new Item.Properties()
+            "void_essence_bucket", () -> new BucketItem(() -> VOID_ESSENCE.value(), new Item.Properties()
                     .craftRemainder(Items.BUCKET)
                     .stacksTo(1)));
     

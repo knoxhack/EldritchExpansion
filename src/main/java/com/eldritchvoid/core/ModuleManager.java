@@ -6,6 +6,7 @@ import com.eldritchvoid.modules.eldritchartifacts.EldritchArtifactsModule;
 import com.eldritchvoid.modules.obsidianforgemaster.ObsidianForgemasterModule;
 import com.eldritchvoid.modules.voidcorruption.VoidCorruptionModule;
 import com.eldritchvoid.modules.eldritcharcana.EldritchArcanaModule;
+import com.eldritchvoid.modules.obsidianconstructs.ObsidianConstructsModule;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class ModuleManager {
         registerModule(new ObsidianForgemasterModule());
         registerModule(new VoidCorruptionModule());
         registerModule(new EldritchArcanaModule());
+        registerModule(new ObsidianConstructsModule());
         
         // Initialize registered modules
         modules.values().forEach(Module::init);
