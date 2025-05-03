@@ -69,10 +69,12 @@ public class VoidAlchemyFluids {
             () -> new BaseFlowingFluid.Flowing(voidEssenceProperties));
         
         // Create and register the bucket item
-        // In NeoForge 1.21.5, we need to be careful with supplier typing
+        // In NeoForge 1.21.5, BucketItem constructor requires a different pattern
         java.util.function.Supplier<Item> voidEssenceBucketSupplier = () -> {
+            // The BucketItem constructor needs a direct supplier to the fluid, not a lambda
+            Supplier<Fluid> fluidSupplier = () -> VOID_ESSENCE_SOURCE.get();
             return new BucketItem(
-                () -> VOID_ESSENCE_SOURCE.get(), 
+                fluidSupplier, 
                 new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)
             );
         };
@@ -109,8 +111,10 @@ public class VoidAlchemyFluids {
         // Create and register the bucket item
         // Same pattern for Void Pee bucket item
         java.util.function.Supplier<Item> voidPeeBucketSupplier = () -> {
+            // The BucketItem constructor needs a direct supplier to the fluid, not a lambda
+            Supplier<Fluid> fluidSupplier = () -> VOID_PEE_SOURCE.get();
             return new BucketItem(
-                () -> VOID_PEE_SOURCE.get(), 
+                fluidSupplier,
                 new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)
             );
         };
