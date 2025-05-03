@@ -1,0 +1,60 @@
+{
+  "itemGroup.eldritchvoid": "Eldritch Void",
+  
+  "_comment": "Core Module",
+  "eldritchvoid.modulesystem.name": "Eldritch Void Module System",
+  "eldritchvoid.modulesystem.tooltip": "Manage and configure all Eldritch Void modules",
+  
+  "_comment": "Void Alchemy Module",
+  "module.eldritchvoid.voidalchemy": "Void Alchemy",
+  "module.eldritchvoid.voidalchemy.description": "Manipulate the essence of the void to create powerful compounds",
+  "fluid.eldritchvoid.void_essence": "Void Essence",
+  "block.eldritchvoid.void_essence": "Void Essence",
+  "item.eldritchvoid.void_essence_bucket": "Void Essence Bucket",
+  
+  "_comment": "Obsidian Forgemaster Module",
+  "module.eldritchvoid.obsidianforgemaster": "Obsidian Forgemaster",
+  "module.eldritchvoid.obsidianforgemaster.description": "Craft powerful items using the heat of obsidian forges",
+  "block.eldritchvoid.obsidian_forge": "Obsidian Forge",
+  "container.eldritchvoid.obsidian_forge": "Obsidian Forge",
+  
+  "_comment": "Eldritch Artifacts Module",
+  "module.eldritchvoid.eldritchartifacts": "Eldritch Artifacts",
+  "module.eldritchvoid.eldritchartifacts.description": "Discover ancient artifacts with mysterious powers",
+  "structure.eldritchvoid.eldritch_shrine": "Eldritch Shrine",
+  
+  "_comment": "Void Corruption Module",
+  "module.eldritchvoid.voidcorruption": "Void Corruption",
+  "module.eldritchvoid.voidcorruption.description": "The void spreads its influence throughout the world",
+  "biome.eldritchvoid.corrupted_lands": "Corrupted Lands",
+  
+  "_comment": "Eldritch Arcana Module",
+  "module.eldritchvoid.eldritcharcana": "Eldritch Arcana",
+  "module.eldritchvoid.eldritcharcana.description": "Study forbidden knowledge and perform arcane research",
+  "item.eldritchvoid.arcane_tome": "Arcane Tome",
+  
+  "_comment": "Obsidian Constructs Module",
+  "module.eldritchvoid.obsidianconstructs": "Obsidian Constructs",
+  "module.eldritchvoid.obsidianconstructs.description": "Create autonomous constructs to automate tasks",
+  "entity.eldritchvoid.obsidian_golem": "Obsidian Golem",
+  
+  "_comment": "Eldritch Dimensions Module",
+  "module.eldritchvoid.eldritchdimensions": "Eldritch Dimensions",
+  "module.eldritchvoid.eldritchdimensions.description": "Travel to otherworldly dimensions filled with strange wonders",
+  "dimension.eldritchvoid.void_realm": "Void Realm",
+  
+  "_comment": "Void Tech Module",
+  "module.eldritchvoid.voidtech": "Void Tech",
+  "module.eldritchvoid.voidtech.description": "Harness void energy to power machinery",
+  "block.eldritchvoid.void_generator": "Void Generator",
+  
+  "_comment": "Eldritch Bestiary Module",
+  "module.eldritchvoid.eldritchbestiary": "Eldritch Bestiary",
+  "module.eldritchvoid.eldritchbestiary.description": "Encounter eldritch creatures from beyond",
+  "entity.eldritchvoid.void_horror": "Void Horror",
+  
+  "_comment": "Void Cultists Module",
+  "module.eldritchvoid.voidcultists": "Void Cultists",
+  "module.eldritchvoid.voidcultists.description": "Interact with NPCs who worship the void",
+  "entity.eldritchvoid.void_cultist": "Void Cultist"
+}

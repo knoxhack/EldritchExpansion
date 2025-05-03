@@ -1,0 +1,38 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="All Rights Reserved"
+issueTrackerURL="https://github.com/yourusername/eldritchvoid/issues"
+
+[[mods]]
+modId="eldritchvoid"
+version="${file.jarVersion}"
+displayName="Eldritch Void"
+updateJSONURL="https://github.com/yourusername/eldritchvoid/raw/main/update.json"
+displayURL="https://github.com/yourusername/eldritchvoid"
+logoFile="eldritchvoid_logo.png"
+credits="Thanks to Azanor for the original Thaumcraft mod that inspired this project"
+authors="YourName"
+description='''
+A comprehensive modular Minecraft mod featuring Eldritch, Void, and Obsidian themes inspired by Thaumcraft.
+
+Features:
+- Modular architecture with 10 integrated modules
+- Void Alchemy with fluid systems
+- Obsidian Forgemaster with custom crafting
+- Eldritch Artifacts with procedural shrines
+- And much more!
+'''
+
+[[dependencies.eldritchvoid]]
+    modId="neoforge"
+    mandatory=true
+    versionRange="[1,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.eldritchvoid]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.21.5]"
+    ordering="NONE"
+    side="BOTH"
