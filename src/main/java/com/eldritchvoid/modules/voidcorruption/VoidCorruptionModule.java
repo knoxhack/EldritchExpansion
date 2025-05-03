@@ -1,6 +1,6 @@
 package com.eldritchvoid.modules.voidcorruption;
 
-import com.eldritchvoid.core.AbstractModule;
+import com.eldritchvoid.core.Module;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModLoadingContext;
@@ -12,7 +12,7 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
  * infect blocks, entities, and even players. This corruption provides both challenges
  * and benefits depending on how players interact with it.
  */
-public class VoidCorruptionModule extends AbstractModule {
+public class VoidCorruptionModule extends Module {
 
     /**
      * Initialize the module.

@@ -1,6 +1,6 @@
 package com.eldritchvoid.modules.obsidianforgemaster;
 
-import com.eldritchvoid.core.AbstractModule;
+import com.eldritchvoid.core.Module;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModLoadingContext;
@@ -11,7 +11,7 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
  * The Obsidian Forgemaster module enables players to create and upgrade tools and weapons
  * using obsidian-infused forging techniques. It provides special forge blocks, tools and recipes.
  */
-public class ObsidianForgemasterModule extends AbstractModule {
+public class ObsidianForgemasterModule extends Module {
 
     /**
      * Initialize the module.

@@ -1,6 +1,6 @@
 package com.eldritchvoid.modules.obsidianconstructs;
 
-import com.eldritchvoid.core.AbstractModule;
+import com.eldritchvoid.core.Module;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModLoadingContext;
@@ -12,7 +12,7 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
  * golems, guardians, and structures. These constructs can be used for protection,
  * automation, or aesthetic purposes.
  */
-public class ObsidianConstructsModule extends AbstractModule {
+public class ObsidianConstructsModule extends Module {
 
     /**
      * Initialize the module.

@@ -1,6 +1,6 @@
 package com.eldritchvoid.modules.eldritcharcana;
 
-import com.eldritchvoid.core.AbstractModule;
+import com.eldritchvoid.core.Module;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModLoadingContext;
@@ -12,7 +12,7 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
  * knowledge systems for players to discover and master. It includes various
  * casting mechanics, spell books, and magical effects.
  */
-public class EldritchArcanaModule extends AbstractModule {
+public class EldritchArcanaModule extends Module {
 
     /**
      * Initialize the module.
