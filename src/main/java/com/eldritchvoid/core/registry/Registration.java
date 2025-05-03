@@ -93,7 +93,8 @@ public class Registration {
      * @return The block registry
      */
     public static ModuleRegistry<Block> getBlockRegistry(String moduleName) {
-        return getOrCreateModuleRegistry(moduleName, "Blocks", Registry.BLOCK_REGISTRY);
+        // In NeoForge 1.21.5, registry references were moved to BuiltInRegistries
+        return getOrCreateModuleRegistry(moduleName, "Blocks", net.minecraft.core.registries.BuiltInRegistries.BLOCK);
     }
     
     /**
@@ -103,7 +104,8 @@ public class Registration {
      * @return The item registry
      */
     public static ModuleRegistry<Item> getItemRegistry(String moduleName) {
-        return getOrCreateModuleRegistry(moduleName, "Items", Registry.ITEM_REGISTRY);
+        // In NeoForge 1.21.5, registry references were moved to BuiltInRegistries
+        return getOrCreateModuleRegistry(moduleName, "Items", net.minecraft.core.registries.BuiltInRegistries.ITEM);
     }
     
     /**
@@ -113,6 +115,7 @@ public class Registration {
      * @return The entity registry
      */
     public static ModuleRegistry<EntityType<?>> getEntityRegistry(String moduleName) {
-        return getOrCreateModuleRegistry(moduleName, "Entities", Registry.ENTITY_TYPE_REGISTRY);
+        // In NeoForge 1.21.5, registry references were moved to BuiltInRegistries
+        return getOrCreateModuleRegistry(moduleName, "Entities", net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE);
     }
 }
