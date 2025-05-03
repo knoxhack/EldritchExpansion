@@ -1,29 +1,21 @@
 package com.eldritchvoid.modules.voidalchemy;
 
 import com.eldritchvoid.EldritchVoid;
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
-import net.neoforged.neoforge.common.capabilities.Capability;
-import net.neoforged.neoforge.common.util.LazyOptional;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.function.Consumer;
+import java.util.Optional;
 
 /**
  * A specialized bucket item for Void Alchemy fluids, compatible with NeoForge 1.21.5.
- * This implementation uses a custom approach rather than extending BucketItem
- * to avoid API compatibility issues with the fluid registration system.
+ * This implementation uses a simpler approach than the standard BucketItem
+ * to avoid API compatibility issues with NeoForge 1.21.5's fluid system.
  */
 public class VoidBucketItem extends Item {
     private final DeferredHolder<Fluid, Fluid> fluidHolder;
@@ -64,12 +56,31 @@ public class VoidBucketItem extends Item {
         ItemStack stack = new ItemStack(this);
         
         try {
-            // Create a basic tag structure
-            CompoundTag tag = new CompoundTag();
-            tag.putString("fluid", fluidHolder.getId().toString());
+            // Create a basic tag structure for the fluid data
+            CompoundTag fluidTag = new CompoundTag();
+            fluidTag.putString("id", fluidHolder.getId().toString());
             
-            // Store in the item's tag
-            stack.getOrCreateTag().put("FluidData", tag);
+            // Add the fluid data to the main tag
+            CompoundTag tag = new CompoundTag();
+            tag.put("FluidData", fluidTag);
+            
+            // Set the tag on the stack - NeoForge 1.21.5 compatible
+            if (stack.hasTag()) {
+                // Merge with existing tag
+                CompoundTag existingTag = stack.getTag();
+                if (existingTag != null) {
+                    existingTag.merge(tag);
+                }
+            } else {
+                // Create new tag using Java reflection since API has changed
+                try {
+                    java.lang.reflect.Method setTagMethod = ItemStack.class.getDeclaredMethod("setTag", CompoundTag.class);
+                    setTagMethod.setAccessible(true);
+                    setTagMethod.invoke(stack, tag);
+                } catch (Exception e) {
+                    EldritchVoid.LOGGER.error("Failed to set tag using reflection: {}", e.getMessage());
+                }
+            }
         } catch (Exception e) {
             EldritchVoid.LOGGER.error("Failed to create default instance for VoidBucketItem: {}", e.getMessage());
         }
@@ -95,94 +106,12 @@ public class VoidBucketItem extends Item {
     }
     
     /**
-     * Create capability providers for this bucket.
+     * Get a tag from the ItemStack with NeoForge 1.21.5 compatibility
+     * 
+     * @param stack The item stack
+     * @return Optional of CompoundTag
      */
-    @Override
-    public @Nullable ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-        return new VoidBucketFluidHandler(stack, this);
-    }
-    
-    /**
-     * A fluid handler implementation for the void bucket item.
-     */
-    private static class VoidBucketFluidHandler implements IFluidHandlerItem, ICapabilityProvider {
-        private final ItemStack container;
-        private final VoidBucketItem bucketItem;
-        private final LazyOptional<IFluidHandlerItem> holder = LazyOptional.of(() -> this);
-        
-        public VoidBucketFluidHandler(ItemStack container, VoidBucketItem bucketItem) {
-            this.container = container;
-            this.bucketItem = bucketItem;
-        }
-        
-        @Override
-        public ItemStack getContainer() {
-            return container;
-        }
-        
-        @Override
-        public int getTanks() {
-            return 1;
-        }
-        
-        @Nonnull
-        @Override
-        public FluidStack getFluidInTank(int tank) {
-            return tank == 0 ? bucketItem.getFluidStack(container) : FluidStack.EMPTY;
-        }
-        
-        @Override
-        public int getTankCapacity(int tank) {
-            return tank == 0 ? BUCKET_VOLUME : 0;
-        }
-        
-        @Override
-        public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
-            return tank == 0 && stack.getFluid() == bucketItem.getFluid();
-        }
-        
-        @Override
-        public int fill(FluidStack resource, FluidAction action) {
-            // Buckets can't be filled, they're pre-filled
-            return 0;
-        }
-        
-        @Nonnull
-        @Override
-        public FluidStack drain(FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || !isFluidValid(0, resource) || resource.getAmount() < BUCKET_VOLUME) {
-                return FluidStack.EMPTY;
-            }
-            return drain(BUCKET_VOLUME, action);
-        }
-        
-        @Nonnull
-        @Override
-        public FluidStack drain(int maxDrain, FluidAction action) {
-            if (maxDrain < BUCKET_VOLUME) {
-                return FluidStack.EMPTY;
-            }
-            
-            FluidStack fluidStack = bucketItem.getFluidStack(container);
-            if (action.execute()) {
-                container.shrink(1);
-                ItemStack emptyBucket = new ItemStack(Items.BUCKET);
-                if (container.isEmpty()) {
-                    container = emptyBucket;
-                } else if (container.getCount() == 0) {
-                    container = emptyBucket;
-                }
-            }
-            
-            return fluidStack;
-        }
-        
-        @Override
-        public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-            if (cap == Capabilities.FluidHandler.ITEM) {
-                return holder.cast();
-            }
-            return LazyOptional.empty();
-        }
+    private Optional<CompoundTag> getSafeTag(ItemStack stack) {
+        return Optional.ofNullable(stack.getTag());
     }
 }
