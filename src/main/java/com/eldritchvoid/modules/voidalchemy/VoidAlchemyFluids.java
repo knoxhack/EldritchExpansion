@@ -11,7 +11,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.common.SoundActions;
-import net.neoforged.neoforge.fluids.BaseFlowingFluid;
+// import net.neoforged.neoforge.fluids.BaseFlowingFluid; // Using our custom implementation instead
 import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
@@ -52,21 +52,22 @@ public class VoidAlchemyFluids {
         
         // ===== VOID ESSENCE FLUID =====
         // First create the fluid type
-        FluidType voidEssenceType = createVoidEssenceFluidType();
+        final FluidType voidEssenceType = createVoidEssenceFluidType();
         
-        // Then create the properties (initially with null references to be updated later)
-        BaseFlowingFluid.Properties voidEssenceProperties = new BaseFlowingFluid.Properties(
+        // Then create the properties (initially with null references)
+        // Properties need to be final for lambda usage
+        final BaseFlowingFluid.Properties initialVoidEssenceProperties = new BaseFlowingFluid.Properties(
             () -> voidEssenceType,
             () -> null, // These will be updated later
             () -> null
         );
         
-        // Register the source and flowing fluids
+        // Register the source and flowing fluids using the initial properties
         VOID_ESSENCE_SOURCE = fluidRegistry.register(moduleName, "void_essence", 
-            () -> new BaseFlowingFluid.Source(voidEssenceProperties));
+            () -> new BaseFlowingFluid.Source(initialVoidEssenceProperties));
         
         VOID_ESSENCE_FLOWING = fluidRegistry.register(moduleName, "flowing_void_essence", 
-            () -> new BaseFlowingFluid.Flowing(voidEssenceProperties));
+            () -> new BaseFlowingFluid.Flowing(initialVoidEssenceProperties));
         
         // Create and register the bucket item
         // In NeoForge 1.21.5, BucketItem constructor has changed
@@ -82,31 +83,37 @@ public class VoidAlchemyFluids {
         VOID_ESSENCE_BUCKET = itemRegistry.register(moduleName, "void_essence_bucket", 
             voidEssenceBucketSupplier);
         
-        // Complete the fluid properties configuration
-        voidEssenceProperties = new BaseFlowingFluid.Properties(
+        // Create the final properties configuration 
+        // Create a new instance rather than modifying the initial properties
+        final BaseFlowingFluid.Properties finalVoidEssenceProperties = new BaseFlowingFluid.Properties(
             () -> voidEssenceType,
             () -> VOID_ESSENCE_SOURCE.get(),
             () -> VOID_ESSENCE_FLOWING.get()
         )
         .bucket(() -> VOID_ESSENCE_BUCKET.get());
         
+        // Update the fluid references with the final properties (done via reflection in BaseFlowingFluid)
+        ((BaseFlowingFluid)VOID_ESSENCE_SOURCE.get()).setProperties(finalVoidEssenceProperties);
+        ((BaseFlowingFluid)VOID_ESSENCE_FLOWING.get()).setProperties(finalVoidEssenceProperties);
+        
         // ===== VOID PEE FLUID =====
         // Create a fluid type for the humorous alchemical reagent
-        FluidType voidPeeType = createVoidPeeFluidType();
+        final FluidType voidPeeType = createVoidPeeFluidType();
         
         // Create the properties (initially with null references)
-        BaseFlowingFluid.Properties voidPeeProperties = new BaseFlowingFluid.Properties(
+        // Properties need to be final for lambda usage
+        final BaseFlowingFluid.Properties initialVoidPeeProperties = new BaseFlowingFluid.Properties(
             () -> voidPeeType,
             () -> null,
             () -> null
         );
         
-        // Register the source and flowing fluids
+        // Register the source and flowing fluids using the initial properties
         VOID_PEE_SOURCE = fluidRegistry.register(moduleName, "void_pee", 
-            () -> new BaseFlowingFluid.Source(voidPeeProperties));
+            () -> new BaseFlowingFluid.Source(initialVoidPeeProperties));
         
         VOID_PEE_FLOWING = fluidRegistry.register(moduleName, "flowing_void_pee", 
-            () -> new BaseFlowingFluid.Flowing(voidPeeProperties));
+            () -> new BaseFlowingFluid.Flowing(initialVoidPeeProperties));
         
         // Create and register the bucket item
         // Same pattern for Void Pee bucket item
@@ -122,13 +129,18 @@ public class VoidAlchemyFluids {
         VOID_PEE_BUCKET = itemRegistry.register(moduleName, "void_pee_bucket", 
             voidPeeBucketSupplier);
         
-        // Complete the fluid properties configuration
-        voidPeeProperties = new BaseFlowingFluid.Properties(
+        // Create the final properties configuration
+        // Create a new instance rather than modifying the initial properties
+        final BaseFlowingFluid.Properties finalVoidPeeProperties = new BaseFlowingFluid.Properties(
             () -> voidPeeType,
             () -> VOID_PEE_SOURCE.get(),
             () -> VOID_PEE_FLOWING.get()
         )
         .bucket(() -> VOID_PEE_BUCKET.get());
+        
+        // Update the fluid references with the final properties (done via reflection in BaseFlowingFluid)
+        ((BaseFlowingFluid)VOID_PEE_SOURCE.get()).setProperties(finalVoidPeeProperties);
+        ((BaseFlowingFluid)VOID_PEE_FLOWING.get()).setProperties(finalVoidPeeProperties);
         
         EldritchVoid.LOGGER.info("Registered Void Alchemy fluids");
     }
