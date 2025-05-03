@@ -40,9 +40,12 @@ public class VoidAlchemyFluids {
     
     // Void Essence Bucket - using proper parameter for NeoForge 1.21.5
     public static final DeferredHolder<Item, Item> VOID_ESSENCE_BUCKET = Registration.ITEMS.register(
-            "void_essence_bucket", () -> new BucketItem(VOID_ESSENCE::get, new Item.Properties()
-                    .craftRemainder(Items.BUCKET)
-                    .stacksTo(1)));
+            "void_essence_bucket", () -> new BucketItem(
+                    // Simply pass a supplier that returns the fluid
+                    () -> VOID_ESSENCE.get(), 
+                    new Item.Properties()
+                        .craftRemainder(Items.BUCKET)
+                        .stacksTo(1)));
     
     /**
      * Properties for the Void Essence fluid.

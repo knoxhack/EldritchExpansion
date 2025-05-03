@@ -25,10 +25,18 @@ public class ObsidianConstructsEntities {
     // Obsidian Golem - a strong but slow guardian construct
     public static final DeferredHolder<EntityType<?>, EntityType<Monster>> OBSIDIAN_GOLEM = Registration.ENTITIES.register(
             "obsidian_golem", 
-            () -> (EntityType<Monster>)EntityType.Builder.of((type, level) -> null, MobCategory.MONSTER)
-                    .sized(1.4F, 2.7F)
-                    .clientTrackingRange(10)
-                    .build(Registration.location("obsidian_golem")));
+            () -> {
+                // Properly create the EntityType using a ResourceKey instead of ResourceLocation
+                ResourceKey<EntityType<?>> resourceKey = ResourceKey.create(
+                    net.minecraft.core.registries.Registries.ENTITY_TYPE, 
+                    Registration.location("obsidian_golem")
+                );
+                
+                return (EntityType<Monster>)EntityType.Builder.of((type, level) -> null, MobCategory.MONSTER)
+                        .sized(1.4F, 2.7F)
+                        .clientTrackingRange(10)
+                        .build(resourceKey.location().toString());
+            });
     
     /**
      * Register all entities.

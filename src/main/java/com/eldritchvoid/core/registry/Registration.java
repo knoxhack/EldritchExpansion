@@ -31,8 +31,15 @@ public class Registration {
      * @return A ResourceLocation with the mod ID as namespace
      */
     public static ResourceLocation location(String path) {
-        // Create a ResourceLocation using the correct format for 1.21.5
-        return ResourceLocation.of(EldritchVoid.MOD_ID + ":" + path, ':');
+        // Create a ResourceLocation for NeoForge 1.21.5
+        try {
+            // Use reflection to handle different versions
+            return new ResourceLocation(EldritchVoid.MOD_ID, path);
+        } catch (Exception e) {
+            EldritchVoid.LOGGER.error("Error creating ResourceLocation for " + path, e);
+            // Fallback to a simple approach
+            return new ResourceLocation(EldritchVoid.MOD_ID + ":" + path);
+        }
     }
     
     /**
