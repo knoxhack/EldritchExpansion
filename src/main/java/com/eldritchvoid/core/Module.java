@@ -96,7 +96,7 @@ public abstract class Module {
      * @return The resource location
      */
     public ResourceLocation location(String path) {
-        return ResourceLocation.parse(EldritchVoid.MOD_ID + ":modules/" + moduleName + "/" + path);
+        return ResourceLocation.of(EldritchVoid.MOD_ID, "modules/" + moduleName + "/" + path);
     }
     
     /**

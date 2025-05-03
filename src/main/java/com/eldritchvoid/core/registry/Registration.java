@@ -43,8 +43,8 @@ public class Registration {
      * @return The resource location
      */
     public static ResourceLocation location(String path) {
-        // NeoForge 1.21.5 requires namespace and path as separate parameters
-        return new ResourceLocation(EldritchVoid.MOD_ID, path);
+        // NeoForge 1.21.5 requires using ResourceLocation.of() method
+        return ResourceLocation.of(EldritchVoid.MOD_ID, path);
     }
     
     /**
