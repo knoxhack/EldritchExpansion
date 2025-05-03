@@ -1,81 +1,100 @@
 package com.eldritchvoid.modules.eldritchartifacts;
 
-import com.eldritchvoid.EldritchVoid;
-import com.eldritchvoid.core.IEldritchModule;
-import com.eldritchvoid.modules.eldritchartifacts.worldgen.ShrineGenerator;
+import com.eldritchvoid.core.AbstractModule;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.event.lifecycle.InterModProcessEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.Collections;
-import java.util.List;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 
 /**
- * The Eldritch Artifacts module for Eldritch Void.
- * Handles procedural shrine generation and artifact mechanics.
+ * The Eldritch Artifacts module provides players with powerful magical items
+ * that grant unique abilities and effects inspired by Lovecraftian lore.
  */
-public class EldritchArtifactsModule implements IEldritchModule {
-    private static final Logger LOGGER = LogManager.getLogger();
-    private final IEventBus modEventBus;
-    
-    public EldritchArtifactsModule(IEventBus modEventBus) {
-        this.modEventBus = modEventBus;
+public class EldritchArtifactsModule extends AbstractModule {
+
+    /**
+     * Initialize the module.
+     */
+    @Override
+    public void init() {
+        super.init();
+        
+        // Get the mod event bus
+        IEventBus modEventBus = ModLoadingContext.get().getActiveContainer().getEventBus();
+        
+        // Register lifecycle events
+        modEventBus.addListener(this::setup);
+        modEventBus.addListener(this::addCreative);
+        
+        // Register artifacts
+        EldritchArtifactsItems.register();
+        
+        log("Initialized Eldritch Artifacts module");
     }
     
+    /**
+     * Setup the module during common setup phase.
+     *
+     * @param event The common setup event
+     */
+    private void setup(final FMLCommonSetupEvent event) {
+        // Setup common functionality
+        log("Setting up Eldritch Artifacts module");
+    }
+    
+    /**
+     * Add artifacts to creative tabs.
+     *
+     * @param event The creative tab contents event
+     */
+    private void addCreative(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            // Add utility artifacts
+            // Will be expanded when proper registrations are implemented
+        }
+        
+        if (event.getTabKey() == CreativeModeTabs.COMBAT) {
+            // Add combat artifacts
+            // Will be expanded when proper registrations are implemented
+        }
+    }
+    
+    /**
+     * Get the ID of the module.
+     *
+     * @return The module ID
+     */
     @Override
-    public String getModuleId() {
+    public String getId() {
         return "eldritchartifacts";
     }
     
+    /**
+     * Get the display name of the module.
+     *
+     * @return The module display name
+     */
     @Override
     public String getDisplayName() {
         return "Eldritch Artifacts";
     }
     
+    /**
+     * Called when the module is enabled.
+     */
     @Override
-    public String getDescription() {
-        return "Discover ancient artifacts with mysterious powers";
+    public void onEnable() {
+        super.onEnable();
+        // Additional enabling logic
     }
     
+    /**
+     * Called when the module is disabled.
+     */
     @Override
-    public List<String> getDependencies() {
-        return Collections.emptyList(); // No dependencies
-    }
-    
-    @Override
-    public void initialize() {
-        LOGGER.info("Initializing Eldritch Artifacts Module");
-        
-        // Register event handlers
-        modEventBus.addListener(this::onCommonSetup);
-        modEventBus.addListener(this::onClientSetup);
-        
-        // Initialize shrine generator
-        ShrineGenerator.register(modEventBus);
-    }
-    
-    @Override
-    public void onCommonSetup() {
-        LOGGER.info("Eldritch Artifacts: Common Setup");
-        
-        // Initialize artifact effects
-    }
-    
-    @Override
-    public void onClientSetup() {
-        LOGGER.info("Eldritch Artifacts: Client Setup");
-        
-        // Register client-side rendering for artifacts
-    }
-    
-    @Override
-    public void onInterModEnqueue() {
-        // Send IMC messages to other mods
-    }
-    
-    @Override
-    public void onInterModProcess(InterModProcessEvent event) {
-        // Process IMC messages from other mods
+    public void onDisable() {
+        super.onDisable();
+        // Additional disabling logic
     }
 }

@@ -1,93 +1,81 @@
 package com.eldritchvoid.modules.voidalchemy;
 
 import com.eldritchvoid.EldritchVoid;
-import com.eldritchvoid.core.IEldritchModule;
-import com.eldritchvoid.core.api.VoidAlchemyAPI;
+import com.eldritchvoid.core.AbstractModule;
 import com.eldritchvoid.modules.voidalchemy.fluid.VoidEssenceFluid;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.event.lifecycle.InterModProcessEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.Collections;
-import java.util.List;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 
 /**
- * The Void Alchemy module for Eldritch Void.
- * Handles fluid systems and "Void Pee Essence" mechanics.
+ * The Void Alchemy module enables players to create and use various void-infused
+ * potions, reagents, and alchemical processes. It provides new materials and
+ * fluids related to void essence.
  */
-public class VoidAlchemyModule implements IEldritchModule {
-    private static final Logger LOGGER = LogManager.getLogger();
-    private final IEventBus modEventBus;
-    
-    public VoidAlchemyModule(IEventBus modEventBus) {
-        this.modEventBus = modEventBus;
+public class VoidAlchemyModule extends AbstractModule {
+    /**
+     * Initialize the module.
+     */
+    @Override
+    public void init() {
+        super.init();
+        
+        // Get the mod event bus
+        IEventBus modEventBus = net.neoforged.fml.ModLoadingContext.get().getActiveContainer().getEventBus();
+        
+        // Register lifecycle events
+        modEventBus.addListener(this::setup);
+        modEventBus.addListener(this::addCreative);
+        
+        // Register fluids and items
+        VoidAlchemyItems.register();
+        VoidAlchemyFluids.register();
+        
+        log("Initialized Void Alchemy module");
     }
     
+    /**
+     * Setup the module during the common setup phase.
+     *
+     * @param event The common setup event
+     */
+    private void setup(final FMLCommonSetupEvent event) {
+        // Setup common functionality
+        log("Setting up Void Alchemy module");
+    }
+    
+    /**
+     * Add items to creative tabs.
+     *
+     * @param event The creative tab contents event
+     */
+    private void addCreative(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
+            // Add void alchemy ingredients to the ingredients tab
+            event.accept(VoidAlchemyItems.VOID_ESSENCE_VIAL.get());
+            event.accept(VoidAlchemyItems.VOID_CRYSTAL.get());
+        }
+    }
+    
+    /**
+     * Get the ID of the module.
+     *
+     * @return The module ID
+     */
     @Override
-    public String getModuleId() {
+    public String getId() {
         return "voidalchemy";
     }
     
+    /**
+     * Get the display name of the module.
+     *
+     * @return The module display name
+     */
     @Override
     public String getDisplayName() {
         return "Void Alchemy";
-    }
-    
-    @Override
-    public String getDescription() {
-        return "Manipulate the essence of the void to create powerful compounds";
-    }
-    
-    @Override
-    public List<String> getDependencies() {
-        return Collections.emptyList(); // No dependencies
-    }
-    
-    @Override
-    public void initialize() {
-        LOGGER.info("Initializing Void Alchemy Module");
-        
-        // Register event handlers
-        modEventBus.addListener(this::onCommonSetup);
-        modEventBus.addListener(this::onClientSetup);
-        
-        // Initialize registry entries and fluids
-        VoidEssenceFluid.register(modEventBus);
-        
-        // Register default essence sources
-        VoidAlchemyAPI api = VoidAlchemyAPI.getInstance();
-        api.registerEssenceSource("minecraft:ender_pearl", 20);
-        api.registerEssenceSource("minecraft:ender_eye", 40);
-        api.registerEssenceSource("minecraft:dragon_breath", 100);
-        api.registerEssenceSource("minecraft:chorus_fruit", 10);
-        api.registerEssenceSource("minecraft:chorus_flower", 15);
-        api.registerEssenceSource("minecraft:obsidian", 5);
-    }
-    
-    @Override
-    public void onCommonSetup() {
-        LOGGER.info("Void Alchemy: Common Setup");
-        
-        // Register fluid interactions
-        // This would be done in the common setup
-    }
-    
-    @Override
-    public void onClientSetup() {
-        LOGGER.info("Void Alchemy: Client Setup");
-        
-        // Register fluid rendering
-        // Register special client-side handlers for fluid effects
-    }
-    
-    @Override
-    public void onInterModEnqueue() {
-        // Send IMC messages to other mods
-    }
-    
-    @Override
-    public void onInterModProcess(InterModProcessEvent event) {
-        // Process IMC messages from other mods
     }
 }

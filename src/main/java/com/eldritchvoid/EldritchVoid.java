@@ -1,111 +1,64 @@
 package com.eldritchvoid;
 
-import com.eldritchvoid.core.ModuleLoader;
 import com.eldritchvoid.core.ModuleManager;
-import com.eldritchvoid.core.api.EldritchVoidAPI;
-import com.eldritchvoid.core.config.ConfigHandler;
-import com.eldritchvoid.core.datagen.DataGenerators;
-import com.eldritchvoid.core.network.PacketHandler;
-import com.eldritchvoid.core.registry.RegistryHandler;
-import net.neoforged.api.distmarker.Dist;
+import com.eldritchvoid.core.registry.Registration;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;
-import net.neoforged.fml.event.lifecycle.InterModProcessEvent;
-import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.neoforged.fml.loading.FMLPaths;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.data.event.GatherDataEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+/**
+ * The main mod class for Eldritch Void.
+ * This is the entry point for the mod.
+ */
 @Mod(EldritchVoid.MOD_ID)
 public class EldritchVoid {
+    /**
+     * The mod ID.
+     */
     public static final String MOD_ID = "eldritchvoid";
-    public static final Logger LOGGER = LogManager.getLogger();
     
-    public static EldritchVoid instance;
-    private ModuleManager moduleManager;
+    /**
+     * The logger instance for the mod.
+     */
+    public static final Logger LOGGER = LoggerFactory.getLogger("Eldritch Void");
     
-    public EldritchVoid() {
-        instance = this;
+    /**
+     * Constructor for the mod.
+     * Initializes the mod and sets up event handlers.
+     *
+     * @param modEventBus The mod event bus
+     */
+    public EldritchVoid(IEventBus modEventBus) {
+        LOGGER.info("Initializing Eldritch Void mod...");
         
-        // Initialize API
-        EldritchVoidAPI.init();
+        // Register mod setup
+        modEventBus.addListener(this::commonSetup);
         
-        // Register configuration
-        NeoForge.registerConfig(MOD_ID, ModConfig.Type.COMMON, ConfigHandler.COMMON_CONFIG);
-        NeoForge.registerConfig(MOD_ID, ModConfig.Type.CLIENT, ConfigHandler.CLIENT_CONFIG);
-        NeoForge.registerConfig(MOD_ID, ModConfig.Type.SERVER, ConfigHandler.SERVER_CONFIG);
+        // Initialize registries
+        Registration.init();
         
-        // Get the event bus
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        // Initialize modules
+        ModuleManager.getInstance().initializeModules();
         
-        // Register lifecycle events
-        modEventBus.addListener(this::setup);
-        modEventBus.addListener(this::clientSetup);
-        modEventBus.addListener(this::enqueueIMC);
-        modEventBus.addListener(this::processIMC);
-        modEventBus.addListener(this::gatherData);
-        
-        // Initialize registry handler
-        RegistryHandler.init(modEventBus);
-        
-        // Initialize module management system
-        moduleManager = new ModuleManager();
-        ModuleLoader.loadModules(moduleManager, modEventBus);
-        
-        // Initialize config
-        ConfigHandler.loadConfig(ConfigHandler.COMMON_CONFIG, 
-                FMLPaths.CONFIGDIR.get().resolve(MOD_ID + "-common.toml").toString());
-        
-        // LOGGER message to confirm proper loading
-        LOGGER.info("Eldritch Void mod initialized. Prepare for eldritchness!");
-    }
-    
-    private void setup(final FMLCommonSetupEvent event) {
-        LOGGER.info("Eldritch Void: Common Setup");
-        
-        // Initialize network handler
-        PacketHandler.init();
-        
-        // Initialize modules for common setup
-        event.enqueueWork(() -> {
-            moduleManager.onCommonSetup();
-        });
-    }
-    
-    private void clientSetup(final FMLClientSetupEvent event) {
-        LOGGER.info("Eldritch Void: Client Setup");
-        
-        // Initialize modules for client setup
-        event.enqueueWork(() -> {
-            moduleManager.onClientSetup();
-        });
-    }
-    
-    private void enqueueIMC(final InterModEnqueueEvent event) {
-        // Send InterModComms to other mods
-        moduleManager.onInterModEnqueue();
-    }
-    
-    private void processIMC(final InterModProcessEvent event) {
-        // Process InterModComms from other mods
-        moduleManager.onInterModProcess(event);
-    }
-    
-    private void gatherData(GatherDataEvent event) {
-        DataGenerators.gatherData(event);
+        LOGGER.info("Eldritch Void initialization complete");
     }
     
     /**
-     * Get the module manager instance
+     * Common setup event handler.
+     * Runs after all registries are set up.
+     *
+     * @param event The common setup event
      */
-    public ModuleManager getModuleManager() {
-        return moduleManager;
+    private void commonSetup(final FMLCommonSetupEvent event) {
+        LOGGER.info("Eldritch Void: Common setup phase");
+        
+        // Run common setup tasks
+        event.enqueueWork(() -> {
+            // Setup networking
+            // Setup packet handling
+            // Other common setup tasks
+        });
     }
 }

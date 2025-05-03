@@ -1,215 +1,89 @@
 package com.eldritchvoid.core;
 
 import com.eldritchvoid.EldritchVoid;
-import net.neoforged.fml.event.lifecycle.InterModProcessEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import com.eldritchvoid.modules.voidalchemy.VoidAlchemyModule;
+import com.eldritchvoid.modules.eldritchartifacts.EldritchArtifactsModule;
+import com.eldritchvoid.modules.obsidianforgemaster.ObsidianForgemasterModule;
+import com.eldritchvoid.modules.voidcorruption.VoidCorruptionModule;
+import com.eldritchvoid.modules.eldritcharcana.EldritchArcanaModule;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
- * Manages the modules of the Eldritch Void mod.
- * Handles module loading, dependencies, and lifecycle events.
+ * Manages all modules in the Eldritch Void mod.
+ * Handles registration, dependency resolution, and lifecycle events.
  */
 public class ModuleManager {
-    private static final Logger LOGGER = LogManager.getLogger();
-    
-    private final Map<String, IEldritchModule> modules = new HashMap<>();
-    private final List<IEldritchModule> orderedModules = new ArrayList<>();
+    private static final ModuleManager INSTANCE = new ModuleManager();
+    private final Map<String, Module> modules = new HashMap<>();
     
     /**
-     * Registers a module with the module manager.
-     * 
-     * @param module The module to register
+     * Get the singleton instance of the ModuleManager.
+     *
+     * @return The ModuleManager instance
      */
-    public void registerModule(IEldritchModule module) {
-        String moduleId = module.getModuleId();
-        
-        if (modules.containsKey(moduleId)) {
-            LOGGER.warn("Module with ID {} is already registered. Skipping duplicate registration.", moduleId);
-            return;
-        }
-        
-        modules.put(moduleId, module);
-        orderedModules.add(module);
-        
-        LOGGER.info("Registered module: {}", moduleId);
+    public static ModuleManager getInstance() {
+        return INSTANCE;
     }
     
     /**
-     * Initializes all registered modules.
-     * Checks dependencies and initializes modules in the correct order.
+     * Initialize all modules.
      */
     public void initializeModules() {
-        LOGGER.info("Initializing {} Eldritch Void modules", modules.size());
+        EldritchVoid.LOGGER.info("Initializing modules...");
         
-        // Sort modules by dependency order
-        sortModulesByDependency();
+        // Register all modules
+        registerModule(new VoidAlchemyModule());
+        registerModule(new EldritchArtifactsModule());
+        registerModule(new ObsidianForgemasterModule());
+        registerModule(new VoidCorruptionModule());
+        registerModule(new EldritchArcanaModule());
         
-        // Initialize each module
-        for (IEldritchModule module : orderedModules) {
-            try {
-                if (isModuleEnabled(module)) {
-                    LOGGER.info("Initializing module: {}", module.getModuleId());
-                    module.initialize();
-                } else {
-                    LOGGER.info("Module {} is disabled, skipping initialization", module.getModuleId());
-                }
-            } catch (Exception e) {
-                LOGGER.error("Failed to initialize module {}: {}", module.getModuleId(), e.getMessage());
-                e.printStackTrace();
-            }
-        }
+        // Initialize registered modules
+        modules.values().forEach(Module::init);
+        
+        // Enable all modules
+        modules.values().forEach(Module::onEnable);
+        
+        EldritchVoid.LOGGER.info("Modules initialized: " + modules.size());
     }
     
     /**
-     * Checks if a module is enabled through configuration.
-     * 
-     * @param module The module to check
-     * @return True if the module is enabled, false otherwise
+     * Register a module.
+     *
+     * @param module The module to register
      */
-    private boolean isModuleEnabled(IEldritchModule module) {
-        // TODO: Implement configuration-based module enabling/disabling
-        return true;
+    public void registerModule(Module module) {
+        String id = module.getId();
+        modules.put(id, module);
+        EldritchVoid.LOGGER.info("Registered module: " + module.getDisplayName() + " (ID: " + id + ")");
     }
     
     /**
-     * Sorts modules by dependency order.
-     */
-    private void sortModulesByDependency() {
-        // Implementation of topological sort for dependency resolution
-        // For now, we'll use a simple approach where core modules are loaded first
-        
-        List<IEldritchModule> sortedModules = new ArrayList<>();
-        
-        // First pass: Add modules without dependencies
-        for (IEldritchModule module : orderedModules) {
-            if (module.getDependencies().isEmpty()) {
-                sortedModules.add(module);
-            }
-        }
-        
-        // Second pass: Add remaining modules in dependency order
-        List<IEldritchModule> remainingModules = new ArrayList<>(orderedModules);
-        remainingModules.removeAll(sortedModules);
-        
-        while (!remainingModules.isEmpty()) {
-            boolean progress = false;
-            
-            for (int i = 0; i < remainingModules.size(); i++) {
-                IEldritchModule module = remainingModules.get(i);
-                boolean allDependenciesMet = true;
-                
-                for (String dependency : module.getDependencies()) {
-                    boolean dependencyMet = false;
-                    
-                    for (IEldritchModule loadedModule : sortedModules) {
-                        if (loadedModule.getModuleId().equals(dependency)) {
-                            dependencyMet = true;
-                            break;
-                        }
-                    }
-                    
-                    if (!dependencyMet) {
-                        allDependenciesMet = false;
-                        break;
-                    }
-                }
-                
-                if (allDependenciesMet) {
-                    sortedModules.add(module);
-                    remainingModules.remove(i);
-                    progress = true;
-                    i--;
-                }
-            }
-            
-            if (!progress && !remainingModules.isEmpty()) {
-                LOGGER.error("Circular dependency detected in modules!");
-                // Add remaining modules anyway to prevent getting stuck
-                sortedModules.addAll(remainingModules);
-                break;
-            }
-        }
-        
-        orderedModules.clear();
-        orderedModules.addAll(sortedModules);
-    }
-    
-    /**
-     * Gets a registered module by its ID.
-     * 
-     * @param moduleId The ID of the module to get
+     * Get a module by ID.
+     *
+     * @param id The ID of the module to get
      * @return The module, or null if not found
      */
-    public IEldritchModule getModule(String moduleId) {
-        return modules.get(moduleId);
+    public Module getModule(String id) {
+        return modules.get(id);
     }
     
     /**
-     * Called during common setup.
+     * Shutdown all modules.
      */
-    public void onCommonSetup() {
-        for (IEldritchModule module : orderedModules) {
-            if (isModuleEnabled(module)) {
-                try {
-                    module.onCommonSetup();
-                } catch (Exception e) {
-                    LOGGER.error("Error during common setup for module {}: {}", module.getModuleId(), e.getMessage());
-                    e.printStackTrace();
-                }
-            }
-        }
+    public void shutdownModules() {
+        EldritchVoid.LOGGER.info("Shutting down modules...");
+        modules.values().forEach(Module::onDisable);
     }
     
     /**
-     * Called during client setup.
+     * Get all registered modules.
+     *
+     * @return A map of module IDs to modules
      */
-    public void onClientSetup() {
-        for (IEldritchModule module : orderedModules) {
-            if (isModuleEnabled(module)) {
-                try {
-                    module.onClientSetup();
-                } catch (Exception e) {
-                    LOGGER.error("Error during client setup for module {}: {}", module.getModuleId(), e.getMessage());
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-    
-    /**
-     * Called to enqueue IMC messages.
-     */
-    public void onInterModEnqueue() {
-        for (IEldritchModule module : orderedModules) {
-            if (isModuleEnabled(module)) {
-                try {
-                    module.onInterModEnqueue();
-                } catch (Exception e) {
-                    LOGGER.error("Error during IMC enqueue for module {}: {}", module.getModuleId(), e.getMessage());
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-    
-    /**
-     * Called to process IMC messages.
-     */
-    public void onInterModProcess(InterModProcessEvent event) {
-        for (IEldritchModule module : orderedModules) {
-            if (isModuleEnabled(module)) {
-                try {
-                    module.onInterModProcess(event);
-                } catch (Exception e) {
-                    LOGGER.error("Error during IMC process for module {}: {}", module.getModuleId(), e.getMessage());
-                    e.printStackTrace();
-                }
-            }
-        }
+    public Map<String, Module> getModules() {
+        return modules;
     }
 }
