@@ -1,6 +1,6 @@
 package com.eldritchvoid.modules.eldritchartifacts;
 
-import com.eldritchvoid.core.AbstractModule;
+import com.eldritchvoid.core.Module;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModLoadingContext;
@@ -11,7 +11,7 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
  * The Eldritch Artifacts module provides players with powerful magical items
  * that grant unique abilities and effects inspired by Lovecraftian lore.
  */
-public class EldritchArtifactsModule extends AbstractModule {
+public class EldritchArtifactsModule extends Module {
 
     /**
      * Initialize the module.
