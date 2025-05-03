@@ -38,9 +38,9 @@ public class EldritchVoid {
         EldritchVoidAPI.init();
         
         // Register configuration
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigHandler.COMMON_CONFIG);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, ConfigHandler.CLIENT_CONFIG);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, ConfigHandler.SERVER_CONFIG);
+        NeoForge.registerConfig(MOD_ID, ModConfig.Type.COMMON, ConfigHandler.COMMON_CONFIG);
+        NeoForge.registerConfig(MOD_ID, ModConfig.Type.CLIENT, ConfigHandler.CLIENT_CONFIG);
+        NeoForge.registerConfig(MOD_ID, ModConfig.Type.SERVER, ConfigHandler.SERVER_CONFIG);
         
         // Get the event bus
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();

@@ -18,7 +18,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.MobSpawnType.Type;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
@@ -84,10 +84,10 @@ public class CultistEntity extends AbstractVillager implements RangedAttackMob {
      * Register entity data.
      */
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(DATA_CULTIST_TYPE, 0);
-        this.entityData.define(DATA_IS_AGGRESSIVE, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_CULTIST_TYPE, 0);
+        builder.define(DATA_IS_AGGRESSIVE, false);
     }
     
     /**
@@ -98,7 +98,8 @@ public class CultistEntity extends AbstractVillager implements RangedAttackMob {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new RangedAttackGoal(this, 1.0D, 20, 40, 10.0F));
         this.goalSelector.addGoal(2, new AvoidEntityGoal<>(this, Mob.class, 8.0F, 0.6D, 0.6D, 
-                mob -> mob.getType().is(net.minecraft.tags.EntityTypeTags.RAIDERS) && !mob.isAlliedTo(this)));
+                mob -> mob.getType().is(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, 
+                new net.minecraft.resources.ResourceLocation("minecraft", "raiders"))) && !mob.isAlliedTo(this)));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 0.8D, false));
         this.goalSelector.addGoal(3, new RandomStrollGoal(this, 0.6D));
         this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 8.0F));
@@ -124,15 +125,15 @@ public class CultistEntity extends AbstractVillager implements RangedAttackMob {
      * Check if a cultist can spawn at the given position.
      */
     public static boolean checkCultistSpawnRules(EntityType<CultistEntity> type, LevelAccessor level,
-                                               MobSpawnType spawnType, BlockPos pos, 
+                                               Type spawnType, BlockPos pos, 
                                                RandomSource random) {
         // Special cases for event-based spawning
-        if (spawnType == MobSpawnType.EVENT || spawnType == MobSpawnType.SPAWNER) {
+        if (spawnType == Type.EVENT || spawnType == Type.SPAWNER) {
             return true;
         }
         
         // For natural spawning, require darkness and proximity to obsidian
-        if (level.getBrightness(pos) > 8) {
+        if (level.getBrightness(LightLayer.BLOCK, pos) > 8) {
             return false;
         }
         
@@ -159,7 +160,7 @@ public class CultistEntity extends AbstractVillager implements RangedAttackMob {
      */
     @Override
     public void finalizeSpawn(ServerLevel level, net.minecraft.world.DifficultyInstance difficulty, 
-                             MobSpawnType reason, @Nullable net.minecraft.world.entity.SpawnGroupData spawnData, 
+                             Type reason, @Nullable net.minecraft.world.entity.SpawnGroupData spawnData, 
                              @Nullable CompoundTag tag) {
         super.finalizeSpawn(level, difficulty, reason, spawnData, tag);
         
@@ -341,10 +342,10 @@ public class CultistEntity extends AbstractVillager implements RangedAttackMob {
             case 1: // Alchemist
                 // Offer a random special potion
                 Potion[] potions = {
-                    Potions.STRONG_HEALING,
-                    Potions.STRONG_SWIFTNESS,
-                    Potions.STRONG_STRENGTH,
-                    Potions.INVISIBILITY
+                    Potions.STRONG_HEALING.value(),
+                    Potions.STRONG_SWIFTNESS.value(),
+                    Potions.STRONG_STRENGTH.value(),
+                    Potions.INVISIBILITY.value()
                 };
                 offering = PotionUtils.setPotion(
                         new ItemStack(Items.POTION),
@@ -433,10 +434,8 @@ public class CultistEntity extends AbstractVillager implements RangedAttackMob {
                 // Play throw sound
                 this.playSound(SoundEvents.WITCH_THROW, 1.0F, 0.8F + this.random.nextFloat() * 0.4F);
                 
-                // Consume the potion
-                if (!this.getAbilities().instabuild) {
-                    potionStack.shrink(1);
-                }
+                // Consume the potion - cultists always consume potions since they're not in creative mode
+                potionStack.shrink(1);
             }
         }
     }
@@ -506,6 +505,14 @@ public class CultistEntity extends AbstractVillager implements RangedAttackMob {
     }
     
     /**
+     * Reward trade XP - implementation of AbstractVillager abstract method.
+     */
+    @Override
+    protected void rewardTradeXp(MerchantOffer offer) {
+        // Cultists don't gain XP from trades
+    }
+    
+    /**
      * Get the trading UI title.
      * AbstractVillager implementation.
      */
@@ -543,7 +550,7 @@ public class CultistEntity extends AbstractVillager implements RangedAttackMob {
         tag.putInt("HostilityTimer", this.hostilityTimer);
         
         if (this.ritualSummoner != null) {
-            tag.putUUID("RitualSummoner", this.ritualSummoner);
+            tag.putString("RitualSummoner", this.ritualSummoner.toString());
         }
     }
     
@@ -554,13 +561,25 @@ public class CultistEntity extends AbstractVillager implements RangedAttackMob {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         
-        this.setCultistType(tag.getInt("CultistType"));
-        this.setAggressive(tag.getBoolean("IsAggressive"));
-        this.initialReputation = tag.getInt("InitialReputation");
-        this.hostilityTimer = tag.getInt("HostilityTimer");
+        if (tag.contains("CultistType")) {
+            this.setCultistType(tag.getInt("CultistType").orElse(0));
+        }
+        if (tag.contains("IsAggressive")) {
+            this.setAggressive(tag.getBoolean("IsAggressive").orElse(false));
+        }
+        if (tag.contains("InitialReputation")) {
+            this.initialReputation = tag.getInt("InitialReputation").orElse(0);
+        }
+        if (tag.contains("HostilityTimer")) {
+            this.hostilityTimer = tag.getInt("HostilityTimer").orElse(0);
+        }
         
-        if (tag.hasUUID("RitualSummoner")) {
-            this.ritualSummoner = tag.getUUID("RitualSummoner");
+        if (tag.contains("RitualSummoner")) {
+            try {
+                this.ritualSummoner = UUID.fromString(tag.getString("RitualSummoner").orElse(""));
+            } catch (IllegalArgumentException e) {
+                // Handle invalid UUID format
+            }
         }
     }
 }

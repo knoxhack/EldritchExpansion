@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.AdvancementEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -186,7 +187,7 @@ public class ResearchManager {
     /**
      * Handle player advancements for research progression.
      */
-    private void onPlayerAdvancement(PlayerEvent.PlayerAdvancementEvent event) {
+    private void onPlayerAdvancement(AdvancementEvent event) {
         // Could trigger research based on advancements
     }
     

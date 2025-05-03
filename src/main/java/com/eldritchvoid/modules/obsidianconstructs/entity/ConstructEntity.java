@@ -12,6 +12,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.TimeUtil;
 import net.minecraft.util.valueproviders.UniformInt;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -86,11 +87,11 @@ public class ConstructEntity extends Monster implements NeutralMob {
      * Register entity data.
      */
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(DATA_REMAINING_ANGER_TIME, 0);
-        this.entityData.define(DATA_TASK, "idle");
-        this.entityData.define(DATA_OWNER, "");
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_REMAINING_ANGER_TIME, 0);
+        builder.define(DATA_TASK, "idle");
+        builder.define(DATA_OWNER, "");
     }
     
     /**
@@ -141,7 +142,7 @@ public class ConstructEntity extends Monster implements NeutralMob {
         // Check if player is the owner
         if (isOwnedBy(player)) {
             // If holding a wrench or similar tool, open configuration GUI
-            if (itemstack.is(net.minecraft.tags.ItemTags.create(new net.minecraft.resources.ResourceLocation("forge", "tools/wrench")))) {
+            if (itemstack.is(net.minecraft.tags.ItemTags.create(new net.minecraft.resources.ResourceLocation("neoforge", "tools/wrench")))) {
                 if (!level().isClientSide) {
                     // Open configuration GUI
                     // This would be implemented with a packet to open the GUI
@@ -327,7 +328,7 @@ public class ConstructEntity extends Monster implements NeutralMob {
         tag.putString("Task", this.getTask());
         
         if (this.getOwnerUUID() != null) {
-            tag.putUUID("Owner", this.getOwnerUUID());
+            tag.putString("Owner", this.getOwnerUUID().toString());
         }
         
         if (this.workTarget != null) {
@@ -347,20 +348,24 @@ public class ConstructEntity extends Monster implements NeutralMob {
         this.readPersistentAngerSaveData(this.level(), tag);
         
         if (tag.contains("Task")) {
-            this.setTask(tag.getString("Task"));
+            this.setTask(tag.getString("Task").orElse("idle"));
         }
         
-        if (tag.hasUUID("Owner")) {
-            this.setOwner(tag.getUUID("Owner"));
+        if (tag.contains("Owner")) {
+            try {
+                this.setOwner(UUID.fromString(tag.getString("Owner").orElse("")));
+            } catch (IllegalArgumentException e) {
+                // Log invalid UUID format
+            }
         }
         
         if (tag.contains("WorkX")) {
             this.workTarget = new BlockPos(
-                    tag.getInt("WorkX"),
-                    tag.getInt("WorkY"),
-                    tag.getInt("WorkZ")
+                    tag.getInt("WorkX").orElse(0),
+                    tag.getInt("WorkY").orElse(0),
+                    tag.getInt("WorkZ").orElse(0)
             );
-            this.workProgress = tag.getInt("WorkProgress");
+            this.workProgress = tag.getInt("WorkProgress").orElse(0);
         }
     }
     

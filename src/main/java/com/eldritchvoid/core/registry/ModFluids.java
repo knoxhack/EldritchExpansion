@@ -61,7 +61,7 @@ public class ModFluids {
      */
     public static void register() {
         EldritchVoid.LOGGER.info("Registering Eldritch Void fluids");
-        FLUID_TYPES.register(RegistryHandler.BLOCKS.getEventBus());
-        FLUIDS.register(RegistryHandler.BLOCKS.getEventBus());
+        // Fluid registrations are now handled by RegistryHandler.init()
+        // The registers are already attached to the event bus
     }
 }

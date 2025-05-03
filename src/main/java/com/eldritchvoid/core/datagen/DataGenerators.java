@@ -165,7 +165,7 @@ public class DataGenerators {
     /**
      * World generation provider.
      */
-    private static class ModWorldGenProvider extends net.minecraft.data.worldgen.BootstapContext<net.minecraft.world.level.levelgen.feature.ConfiguredFeature<?, ?>> {
+    private static class ModWorldGenProvider extends net.minecraft.data.worldgen.BootstrapContext<net.minecraft.world.level.levelgen.feature.ConfiguredFeature<?, ?>> {
         public ModWorldGenProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider) {
             super(null); // Not actually used, just to satisfy the compiler
         }

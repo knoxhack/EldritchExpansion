@@ -18,6 +18,7 @@ import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtension
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.SoundActions;
 import net.neoforged.neoforge.event.entity.living.LivingEvent;
+
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
 import org.apache.logging.log4j.LogManager;
@@ -103,7 +104,7 @@ public class VoidEssenceFluid extends BaseFlowingFluid {
      * 
      * @param event The living tick event
      */
-    private static void onEntityInVoidEssence(LivingEvent.LivingTickEvent event) {
+    private static void onEntityInVoidEssence(LivingEvent event) {
         LivingEntity entity = event.getEntity();
         Level level = entity.level();
         

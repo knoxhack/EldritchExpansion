@@ -4267,3 +4267,7 @@ WARN:    net/minecraft/world/level/storage/loot/providers/nbt/ContextNbtProvider
 WARN:  Inconsistent inner class entries for net/minecraft/world/ticks/LevelTicks$PosAndContainerConsumer!
 WARN:    net/minecraft/world/ticks/LevelTicks$PosAndContainerConsumer: PosAndContainerConsumer abstract static MEMBER of net/minecraft/world/ticks/LevelTicks
 WARN:    net/minecraft/world/ticks/LevelTicks: PosAndContainerConsumer private abstract static MEMBER of net/minecraft/world/ticks/LevelTicks
+WARN:  net/minecraft/world/level/chunk/CarvingMask.{net/minecraft/world/level/chunk/CarvingMask: lambda$new$0} processed twice
+WARN:  net/minecraft/world/level/chunk/PalettedContainer.{net/minecraft/world/level/chunk/PalettedContainer: lambda$new$0} processed twice
+WARN:  net/minecraft/world/level/chunk/PalettedContainer.{net/minecraft/world/level/chunk/PalettedContainer: lambda$new$0} processed twice
+WARN:  net/minecraft/world/level/chunk/PalettedContainer.{net/minecraft/world/level/chunk/PalettedContainer: lambda$new$0} processed twice

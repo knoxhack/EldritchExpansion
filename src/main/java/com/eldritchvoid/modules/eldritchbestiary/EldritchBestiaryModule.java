@@ -13,6 +13,8 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEvent;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -150,7 +152,7 @@ public class EldritchBestiaryModule implements IEldritchModule {
     /**
      * Handle living entity updates.
      */
-    private void onLivingUpdate(net.neoforged.neoforge.event.entity.living.LivingEvent.LivingTickEvent event) {
+    private void onLivingUpdate(LivingEvent event) {
         // Handle any custom entity ticking logic
         if (event.getEntity() instanceof EldritchEntity eldritchEntity) {
             // Custom behavior based on world conditions

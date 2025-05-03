@@ -6,7 +6,7 @@ import com.eldritchvoid.core.registry.ModEntities;
 import com.eldritchvoid.modules.voidcultists.entity.CultistEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.MobSpawnType.Type;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
@@ -229,7 +229,7 @@ public class VoidCultistsModule implements IEldritchModule {
                 
                 // Spawn the cultist
                 CultistEntity cultist = ModEntities.VOID_CULTIST.get().spawn(
-                        level, spawnPos, MobSpawnType.EVENT);
+                        level, spawnPos, Type.EVENT);
                 
                 if (cultist != null) {
                     cultist.setInitialReputation(getReputation(player.getUUID()));

@@ -8,7 +8,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BiomeDefaultFeatures;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
@@ -33,6 +33,7 @@ import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
@@ -121,7 +122,7 @@ public class VoidDimension {
     /**
      * Bootstrap the dimension type.
      */
-    public static void bootstrapDimensionType(BootstapContext<DimensionType> context) {
+    public static void bootstrapDimensionType(BootstrapContext<DimensionType> context) {
         context.register(VOID_DIMENSION_TYPE, new DimensionType(
                 OptionalLong.of(12000L), // Fixed time
                 false, // No skylight
@@ -144,7 +145,7 @@ public class VoidDimension {
     /**
      * Bootstrap the biomes.
      */
-    public static void bootstrapBiomes(BootstapContext<Biome> context) {
+    public static void bootstrapBiomes(BootstrapContext<Biome> context) {
         // Void Wastes biome
         context.register(VOID_WASTES, createVoidWastesBiome());
         

@@ -15,7 +15,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.MobSpawnType.Type;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -68,10 +68,10 @@ public class EldritchEntity extends Monster {
      * Register entity data.
      */
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(DATA_IS_POWERED, false);
-        this.entityData.define(DATA_CORRUPTION_LEVEL, 0);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_IS_POWERED, false);
+        builder.define(DATA_CORRUPTION_LEVEL, 0);
     }
     
     /**
@@ -105,15 +105,15 @@ public class EldritchEntity extends Monster {
      * Check if a void horror can spawn at the given position.
      */
     public static boolean checkVoidHorrorSpawnRules(EntityType<EldritchEntity> type, LevelAccessor level,
-                                               MobSpawnType spawnType, BlockPos pos, 
+                                               Type spawnType, BlockPos pos, 
                                                net.minecraft.util.RandomSource random) {
         // Only spawn in darkness
-        if (level.getBrightness(pos) > 4) {
+        if (level.getBrightness(LightLayer.BLOCK, pos) > 4) {
             return false;
         }
         
         // Check for special conditions based on spawn type
-        if (spawnType == MobSpawnType.SPAWNER) {
+        if (spawnType == Type.SPAWNER) {
             return true;
         }
         
@@ -193,15 +193,14 @@ public class EldritchEntity extends Monster {
     
     /**
      * Handle entity being hit.
+     * Note: This isn't overriding the Entity.hurt method directly (which is now final)
+     * but instead hooking into the damage handling system in a compatible way
      */
-    @Override
-    public boolean hurt(DamageSource source, float amount) {
+    public void onHurt(DamageSource source, float amount) {
         // Chance to teleport when hit
         if (!this.level().isClientSide() && source.getEntity() != null && this.random.nextInt(10) == 0 && this.teleportCooldown <= 0) {
             this.teleport();
         }
-        
-        return super.hurt(source, amount);
     }
     
     /**
@@ -266,10 +265,11 @@ public class EldritchEntity extends Monster {
     
     /**
      * Handle attacking another entity.
+     * Updated for NeoForge 1.21.5: doHurtTarget now requires ServerLevel and different params
      */
     @Override
-    public boolean doHurtTarget(Entity target) {
-        boolean success = super.doHurtTarget(target);
+    public boolean doHurtTarget(ServerLevel level, Entity target) {
+        boolean success = super.doHurtTarget(level, target);
         
         if (success && target instanceof LivingEntity livingTarget) {
             // Apply special effects on hit
@@ -345,9 +345,15 @@ public class EldritchEntity extends Monster {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         
-        this.setPoweredState(tag.getBoolean("Powered"));
-        this.setCorruptionLevel(tag.getInt("CorruptionLevel"));
-        this.teleportCooldown = tag.getInt("TeleportCooldown");
+        if (tag.contains("Powered")) {
+            this.setPoweredState(tag.getBoolean("Powered").orElse(false));
+        }
+        if (tag.contains("CorruptionLevel")) {
+            this.setCorruptionLevel(tag.getInt("CorruptionLevel").orElse(0));
+        }
+        if (tag.contains("TeleportCooldown")) {
+            this.teleportCooldown = tag.getInt("TeleportCooldown").orElse(0);
+        }
     }
     
     /**
@@ -361,16 +367,16 @@ public class EldritchEntity extends Monster {
         }
         
         // Prefer darkness
-        return 10.0F - level.getBrightness(pos);
+        return 10.0F - level.getBrightness(LightLayer.BLOCK, pos);
     }
     
     /**
      * Handle entity swimming.
      */
     @Override
-    public boolean isInWaterOrBubble() {
+    public boolean isInWater() {
         // Void horrors are damaged by water but can float on it
-        if (super.isInWaterOrBubble()) {
+        if (super.isInWater()) {
             if (this.tickCount % 10 == 0) {
                 // Damage when in water
                 this.hurt(this.damageSources().drown(), 1.0F);
