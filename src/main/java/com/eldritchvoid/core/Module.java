@@ -41,6 +41,15 @@ public abstract class Module {
     }
     
     /**
+     * Log a message with the module's prefix.
+     *
+     * @param message The message to log
+     */
+    protected void log(String message) {
+        EldritchVoid.LOGGER.info("[" + getDisplayName() + "] " + message);
+    }
+    
+    /**
      * Set up the module's configuration.
      *
      * @param config The config to set up
@@ -73,7 +82,7 @@ public abstract class Module {
      * @return The resource location
      */
     public ResourceLocation location(String path) {
-        return new ResourceLocation(EldritchVoid.MOD_ID, "modules/" + moduleName + "/" + path);
+        return ResourceLocation.parse(EldritchVoid.MOD_ID + ":modules/" + moduleName + "/" + path);
     }
     
     /**

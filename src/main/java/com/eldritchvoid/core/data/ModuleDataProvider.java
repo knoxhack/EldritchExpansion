@@ -77,9 +77,8 @@ public abstract class ModuleDataProvider {
         PackOutput output = generator.getPackOutput();
         
         for (ModuleDataProvider provider : PROVIDERS.values()) {
-            if (event.includeServer() || event.includeClient()) {
-                provider.generate();
-            }
+            // Execute providers regardless of includes for now
+            provider.generate();
             
             EldritchVoid.LOGGER.info("Registered data provider for module: {}", provider.moduleName);
         }
