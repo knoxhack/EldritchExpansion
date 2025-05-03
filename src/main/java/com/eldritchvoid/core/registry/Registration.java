@@ -1,117 +1,118 @@
 package com.eldritchvoid.core.registry;
 
 import com.eldritchvoid.EldritchVoid;
-import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * Handles registration of all mod objects.
- * Using the latest NeoForge 1.21.5 DeferredRegister system.
+ * Central registration utility for the mod.
+ * Provides access to all registries and helper methods.
  */
 public class Registration {
-    // Create DeferredRegisters to hold our mod objects
-    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(Registries.BLOCK, EldritchVoid.MOD_ID);
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(Registries.ITEM, EldritchVoid.MOD_ID);
-    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, EldritchVoid.MOD_ID);
-    public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(Registries.ENTITY_TYPE, EldritchVoid.MOD_ID);
+    // Base registry for blocks
+    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(Registry.BLOCK_REGISTRY, EldritchVoid.MOD_ID);
+    
+    // Base registry for items
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(Registry.ITEM_REGISTRY, EldritchVoid.MOD_ID);
+    
+    // Base registry for entity types
+    public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(Registry.ENTITY_TYPE_REGISTRY, EldritchVoid.MOD_ID);
+    
+    // Map of module registries
+    private static final Map<String, Map<ResourceKey<? extends Registry<?>>, ModuleRegistry<?>>> MODULE_REGISTRIES = new HashMap<>();
     
     /**
-     * Create a ResourceLocation with the mod ID namespace.
-     *
-     * @param path The path for the resource
-     * @return A ResourceLocation with the mod ID as namespace
-     */
-    /**
-     * Create a ResourceLocation with the mod ID as the namespace.
-     * This uses a special method for compatibility with NeoForge 1.21.5.
-     */
-    public static ResourceLocation location(String path) {
-        // In NeoForge 1.21.5, we need to use the parse method
-        // Minecraft 1.21.5 changed how ResourceLocations are created
-        String fullPath = EldritchVoid.MOD_ID + ":" + path;
-        try {
-            // Try to use the parse method which exists in newer versions
-            return ResourceLocation.parse(fullPath);
-        } catch (Exception e) {
-            // Fallback to a different approach
-            EldritchVoid.LOGGER.warn("Failed to parse ResourceLocation using parse method, using legacy approach");
-            // Split namespace and path
-            String[] parts = fullPath.split(":", 2);
-            if (parts.length == 2) {
-                return createResourceLocation(parts[0], parts[1]);
-            } else {
-                // Just in case, but this shouldn't happen
-                return createResourceLocation("minecraft", fullPath);
-            }
-        }
-    }
-    
-    /**
-     * Private helper method to create ResourceLocation using reflection
-     * to handle different versions of Minecraft.
-     */
-    private static ResourceLocation createResourceLocation(String namespace, String path) {
-        try {
-            // First try to use the constructor directly - works in some versions
-            try {
-                // Try with public constructor first
-                java.lang.reflect.Constructor<ResourceLocation> constructor = 
-                    ResourceLocation.class.getConstructor(String.class, String.class);
-                return constructor.newInstance(namespace, path);
-            } catch (NoSuchMethodException e) {
-                // Constructor might be private, use reflection
-                java.lang.reflect.Constructor<ResourceLocation> constructor = 
-                    ResourceLocation.class.getDeclaredConstructor(String.class, String.class);
-                constructor.setAccessible(true);
-                return constructor.newInstance(namespace, path);
-            }
-        } catch (Exception e) {
-            // Last resort - ugly approach
-            EldritchVoid.LOGGER.error("Failed to create ResourceLocation using reflection", e);
-            // Try to use a public method or field instead
-            throw new RuntimeException("Cannot create ResourceLocation: " + namespace + ":" + path, e);
-        }
-    }
-    
-    /**
-     * Initialize all registries by attaching them to the mod event bus.
+     * Initialize the registration system.
      */
     public static void init() {
-        IEventBus modEventBus = net.neoforged.fml.ModLoadingContext.get().getActiveContainer().getEventBus();
-        
-        // Register all deferred registers to the mod event bus
-        BLOCKS.register(modEventBus);
-        ITEMS.register(modEventBus);
-        BLOCK_ENTITIES.register(modEventBus);
-        ENTITIES.register(modEventBus);
-        
-        // Initialize sub-registry classes
-        ModBlocks.register();
-        ModItems.register();
-        ModEntities.register();
-        ModFluids.register();
-        
-        EldritchVoid.LOGGER.info("Eldritch Void: Registries initialized");
+        EldritchVoid.LOGGER.info("Initializing registration system");
     }
     
     /**
-     * Get the registry key for a given registry and path.
+     * Create a resource location for this mod.
      *
-     * @param registry The registry to create a key for
-     * @param path The path for the registry key
-     * @param <T> The type of the registry
-     * @return A ResourceKey for the given registry and path
+     * @param path The resource path
+     * @return The resource location
      */
-    public static <T> ResourceKey<T> key(ResourceKey<? extends Registry<T>> registry, String path) {
-        return ResourceKey.create(registry, location(path));
+    public static ResourceLocation location(String path) {
+        return new ResourceLocation(EldritchVoid.MOD_ID + ":" + path);
+    }
+    
+    /**
+     * Get or create a module registry.
+     *
+     * @param moduleName The name of the module
+     * @param registryName The human-readable name for this registry
+     * @param registryKey The registry key
+     * @param <T> The registry type
+     * @return The module registry
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> ModuleRegistry<T> getOrCreateModuleRegistry(String moduleName, String registryName, ResourceKey<? extends Registry<T>> registryKey) {
+        Map<ResourceKey<? extends Registry<?>>, ModuleRegistry<?>> moduleRegistryMap = MODULE_REGISTRIES.computeIfAbsent(moduleName, k -> new HashMap<>());
+        
+        ModuleRegistry<?> registry = moduleRegistryMap.get(registryKey);
+        if (registry == null) {
+            registry = new ModuleRegistry<>(registryName, registryKey);
+            moduleRegistryMap.put(registryKey, registry);
+        }
+        
+        return (ModuleRegistry<T>) registry;
+    }
+    
+    /**
+     * Get a module registry.
+     *
+     * @param moduleName The name of the module
+     * @param registryKey The registry key
+     * @param <T> The registry type
+     * @return The module registry, or null if not found
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> ModuleRegistry<T> getModuleRegistry(String moduleName, ResourceKey<? extends Registry<T>> registryKey) {
+        Map<ResourceKey<? extends Registry<?>>, ModuleRegistry<?>> moduleRegistryMap = MODULE_REGISTRIES.get(moduleName);
+        if (moduleRegistryMap == null) {
+            return null;
+        }
+        
+        return (ModuleRegistry<T>) moduleRegistryMap.get(registryKey);
+    }
+    
+    /**
+     * Get block registry for a module.
+     *
+     * @param moduleName The name of the module
+     * @return The block registry
+     */
+    public static ModuleRegistry<Block> getBlockRegistry(String moduleName) {
+        return getOrCreateModuleRegistry(moduleName, "Blocks", Registry.BLOCK_REGISTRY);
+    }
+    
+    /**
+     * Get item registry for a module.
+     *
+     * @param moduleName The name of the module
+     * @return The item registry
+     */
+    public static ModuleRegistry<Item> getItemRegistry(String moduleName) {
+        return getOrCreateModuleRegistry(moduleName, "Items", Registry.ITEM_REGISTRY);
+    }
+    
+    /**
+     * Get entity registry for a module.
+     *
+     * @param moduleName The name of the module
+     * @return The entity registry
+     */
+    public static ModuleRegistry<EntityType<?>> getEntityRegistry(String moduleName) {
+        return getOrCreateModuleRegistry(moduleName, "Entities", Registry.ENTITY_TYPE_REGISTRY);
     }
 }

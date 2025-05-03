@@ -1,79 +1,177 @@
 package com.eldritchvoid.modules.voidalchemy;
 
 import com.eldritchvoid.EldritchVoid;
+import com.eldritchvoid.core.registry.ModuleRegistry;
 import com.eldritchvoid.core.registry.Registration;
-import com.eldritchvoid.modules.voidalchemy.fluid.VoidEssenceFluid;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.common.SoundActions;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
+
+import java.util.function.Consumer;
 
 /**
- * Registers all fluids for the Void Alchemy module.
+ * Fluids for the Void Alchemy module.
  */
 public class VoidAlchemyFluids {
-    // Create a DeferredRegister for FluidTypes
-    public static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(
-            NeoForgeRegistries.FLUID_TYPES, EldritchVoid.MOD_ID);
+    private final String moduleName;
+    private final ModuleRegistry<Fluid> fluidRegistry;
+    private final ModuleRegistry<Item> itemRegistry;
     
-    // Create a DeferredRegister for Fluids
-    public static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(
-            net.minecraft.core.registries.Registries.FLUID, EldritchVoid.MOD_ID);
+    // Void Essence fluid
+    public final DeferredHolder<Fluid, BaseFlowingFluid.Source> VOID_ESSENCE_SOURCE;
+    public final DeferredHolder<Fluid, BaseFlowingFluid.Flowing> VOID_ESSENCE_FLOWING;
+    public final DeferredHolder<Item, BucketItem> VOID_ESSENCE_BUCKET;
     
-    // Void Essence Fluid Type
-    public static final DeferredHolder<FluidType, FluidType> VOID_ESSENCE_TYPE = FLUID_TYPES.register(
-            "void_essence", VoidEssenceFluid.Type::new);
-    
-    // Void Essence Fluids (Source and Flowing)
-    public static final DeferredHolder<Fluid, FlowingFluid> VOID_ESSENCE = FLUIDS.register(
-            "void_essence", () -> new BaseFlowingFluid.Source(VoidAlchemyFluids.voidEssenceProperties()));
-    
-    public static final DeferredHolder<Fluid, FlowingFluid> FLOWING_VOID_ESSENCE = FLUIDS.register(
-            "flowing_void_essence", () -> new BaseFlowingFluid.Flowing(VoidAlchemyFluids.voidEssenceProperties()));
-    
-    // Simple bucket item for NeoForge 1.21.5
-    // We use a placeholder fluid (WATER) since we can't directly use our fluid during registration
-    public static final DeferredHolder<Item, Item> VOID_ESSENCE_BUCKET = Registration.ITEMS.register(
-            "void_essence_bucket", () -> 
-                // Use standard bucket with water (will be replaced with our fluid in-game)
-                new BucketItem(
-                    // Use the standard water fluid for construction
-                    net.minecraft.world.level.material.Fluids.WATER, 
-                    new Item.Properties()
-                        .craftRemainder(Items.BUCKET)
-                        .stacksTo(1)
-                )
-            );
+    // Void Pee fluid (humorous alchemical reagent)
+    public final DeferredHolder<Fluid, BaseFlowingFluid.Source> VOID_PEE_SOURCE;
+    public final DeferredHolder<Fluid, BaseFlowingFluid.Flowing> VOID_PEE_FLOWING;
+    public final DeferredHolder<Item, BucketItem> VOID_PEE_BUCKET;
     
     /**
-     * Properties for the Void Essence fluid.
+     * Create a new fluids component for the Void Alchemy module.
+     *
+     * @param moduleName The name of the module
      */
-    private static BaseFlowingFluid.Properties voidEssenceProperties() {
-        return new BaseFlowingFluid.Properties(
-                VOID_ESSENCE_TYPE,
-                VOID_ESSENCE,
-                FLOWING_VOID_ESSENCE)
-                .bucket(VOID_ESSENCE_BUCKET);
+    public VoidAlchemyFluids(String moduleName) {
+        this.moduleName = moduleName;
+        this.fluidRegistry = Registration.getOrCreateModuleRegistry(moduleName, "Fluids", Registry.FLUID_REGISTRY);
+        this.itemRegistry = Registration.getItemRegistry(moduleName);
+        
+        // Register Void Essence fluid
+        BaseFlowingFluid.Properties voidEssenceProperties = new BaseFlowingFluid.Properties(
+            createVoidEssenceFluidType(),
+            () -> this.VOID_ESSENCE_SOURCE.get(),
+            () -> this.VOID_ESSENCE_FLOWING.get()
+        ).bucket(() -> this.VOID_ESSENCE_BUCKET.get());
+        
+        VOID_ESSENCE_SOURCE = fluidRegistry.register(moduleName, "void_essence", 
+            () -> new BaseFlowingFluid.Source(voidEssenceProperties));
+        
+        VOID_ESSENCE_FLOWING = fluidRegistry.register(moduleName, "flowing_void_essence", 
+            () -> new BaseFlowingFluid.Flowing(voidEssenceProperties));
+        
+        VOID_ESSENCE_BUCKET = itemRegistry.register(moduleName, "void_essence_bucket", 
+            () -> new BucketItem(VOID_ESSENCE_SOURCE, new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
+        
+        // Register Void Pee fluid (humorous alchemical reagent)
+        BaseFlowingFluid.Properties voidPeeProperties = new BaseFlowingFluid.Properties(
+            createVoidPeeFluidType(),
+            () -> this.VOID_PEE_SOURCE.get(),
+            () -> this.VOID_PEE_FLOWING.get()
+        ).bucket(() -> this.VOID_PEE_BUCKET.get());
+        
+        VOID_PEE_SOURCE = fluidRegistry.register(moduleName, "void_pee", 
+            () -> new BaseFlowingFluid.Source(voidPeeProperties));
+        
+        VOID_PEE_FLOWING = fluidRegistry.register(moduleName, "flowing_void_pee", 
+            () -> new BaseFlowingFluid.Flowing(voidPeeProperties));
+        
+        VOID_PEE_BUCKET = itemRegistry.register(moduleName, "void_pee_bucket", 
+            () -> new BucketItem(VOID_PEE_SOURCE, new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
+        
+        EldritchVoid.LOGGER.info("Registered Void Alchemy fluids");
     }
     
     /**
-     * Register all fluids.
+     * Create a fluid type for Void Essence.
+     *
+     * @return The fluid type
      */
-    public static void register() {
-        EldritchVoid.LOGGER.info("Registering Void Alchemy fluids");
-        
-        // Get the mod event bus
-        IEventBus modEventBus = net.neoforged.fml.ModLoadingContext.get().getActiveContainer().getEventBus();
-        
-        // Register the fluid types and fluids
-        FLUID_TYPES.register(modEventBus);
-        FLUIDS.register(modEventBus);
+    private FluidType createVoidEssenceFluidType() {
+        return new FluidType(FluidType.Properties.create()
+            .descriptionId("fluid.eldritchvoid.void_essence")
+            .canSwim(false)
+            .canDrown(true)
+            .canPushEntity(true)
+            .supportsBoating(false)
+            .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL)
+            .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY))
+        {
+            @Override
+            public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
+                consumer.accept(new IClientFluidTypeExtensions() {
+                    @Override
+                    public int getTintColor() {
+                        return 0xFF000033; // Very dark purple-blue
+                    }
+                    
+                    @Override
+                    public ResourceLocation getStillTexture() {
+                        return new ResourceLocation("block/water_still");
+                    }
+                    
+                    @Override
+                    public ResourceLocation getFlowingTexture() {
+                        return new ResourceLocation("block/water_flow");
+                    }
+                });
+            }
+        };
+    }
+    
+    /**
+     * Create a fluid type for Void Pee.
+     *
+     * @return The fluid type
+     */
+    private FluidType createVoidPeeFluidType() {
+        return new FluidType(FluidType.Properties.create()
+            .descriptionId("fluid.eldritchvoid.void_pee")
+            .canSwim(false)
+            .canDrown(true)
+            .canPushEntity(true)
+            .supportsBoating(false)
+            .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL)
+            .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY))
+        {
+            @Override
+            public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
+                consumer.accept(new IClientFluidTypeExtensions() {
+                    @Override
+                    public int getTintColor() {
+                        return 0xFFFFBB00; // Yellow-gold color
+                    }
+                    
+                    @Override
+                    public ResourceLocation getStillTexture() {
+                        return new ResourceLocation("block/water_still");
+                    }
+                    
+                    @Override
+                    public ResourceLocation getFlowingTexture() {
+                        return new ResourceLocation("block/water_flow");
+                    }
+                });
+            }
+        };
+    }
+    
+    /**
+     * Register fluid renderers.
+     */
+    public void registerRenderers() {
+        // In a real implementation, this would register custom renderers for the fluids
+        EldritchVoid.LOGGER.info("Registered Void Alchemy fluid renderers");
+    }
+    
+    /**
+     * Get the fluid registry.
+     *
+     * @return The fluid registry
+     */
+    public ModuleRegistry<Fluid> getFluidRegistry() {
+        return fluidRegistry;
     }
 }

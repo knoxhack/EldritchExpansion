@@ -1,81 +1,121 @@
 package com.eldritchvoid.modules.voidalchemy;
 
 import com.eldritchvoid.EldritchVoid;
-import com.eldritchvoid.core.AbstractModule;
-import com.eldritchvoid.modules.voidalchemy.fluid.VoidEssenceFluid;
-import net.minecraft.world.item.CreativeModeTabs;
+import com.eldritchvoid.core.Module;
+import com.eldritchvoid.core.config.ModuleConfig;
+import com.eldritchvoid.core.documentation.ModuleDocs;
+import com.eldritchvoid.core.documentation.ModuleDocs.Document;
+import com.eldritchvoid.core.documentation.ModuleDocs.Feature;
+import com.eldritchvoid.core.documentation.ModuleDocInfo;
+import com.eldritchvoid.core.registry.Registration;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 
 /**
- * The Void Alchemy module enables players to create and use various void-infused
- * potions, reagents, and alchemical processes. It provides new materials and
- * fluids related to void essence.
+ * The Void Alchemy module for the Eldritch Void mod.
+ * Adds various alchemical elements, fluids, and recipes related to void magic.
  */
-public class VoidAlchemyModule extends AbstractModule {
+@Document(
+    description = "A module that adds void-based alchemy, including strange fluids and transmutation recipes.",
+    version = "1.0.0",
+    author = "EldritchVoid Team",
+    features = {
+        @Feature(name = "Void Essences", description = "Various essences extracted from the void, used in crafting and brewing."),
+        @Feature(name = "Alchemical Apparatus", description = "Special equipment for performing void alchemy."),
+        @Feature(name = "Transmutation Recipes", description = "Convert items using void energy and essences.")
+    }
+)
+public class VoidAlchemyModule extends Module {
+    public static final String MODULE_NAME = "voidalchemy";
+    
+    private VoidAlchemyFluids fluids;
+    private boolean enableVoidEssence;
+    private int voidPeeAmount;
+    
     /**
-     * Initialize the module.
+     * Create a new Void Alchemy module.
+     *
+     * @param modBus The mod event bus
      */
+    public VoidAlchemyModule(IEventBus modBus) {
+        super(MODULE_NAME, modBus);
+        
+        // Register documentation
+        ModuleDocInfo docInfo = ModuleDocs.documentClass(VoidAlchemyModule.class, MODULE_NAME);
+        docInfo.addExample("Creating Void Pee", "Mix 1 bucket of water with 2 units of void essence in the Void Alchemical Cauldron.");
+        docInfo.addIntegration("obsidianforgemaster", "The Obsidian Forgemaster module can use Void Pee as a quenching agent for special tool effects.");
+        
+        EldritchVoid.LOGGER.info("Void Alchemy module created");
+    }
+    
     @Override
-    public void init() {
-        super.init();
+    protected void setupConfig(ModuleConfig config) {
+        config.push("general");
         
-        // Get the mod event bus
-        IEventBus modEventBus = net.neoforged.fml.ModLoadingContext.get().getActiveContainer().getEventBus();
+        // General settings
+        config.defineBool("enableVoidEssence", true, "Whether to enable Void Essence fluid");
+        config.defineInt("voidPeeAmount", 250, 10, 1000, "Amount of Void Pee produced per operation");
         
-        // Register lifecycle events
-        modEventBus.addListener(this::setup);
-        modEventBus.addListener(this::addCreative);
+        config.pop();
         
-        // Register fluids and items
-        VoidAlchemyItems.register();
-        VoidAlchemyFluids.register();
-        
-        log("Initialized Void Alchemy module");
+        EldritchVoid.LOGGER.info("Void Alchemy config set up");
     }
     
-    /**
-     * Setup the module during the common setup phase.
-     *
-     * @param event The common setup event
-     */
-    private void setup(final FMLCommonSetupEvent event) {
-        // Setup common functionality
-        log("Setting up Void Alchemy module");
-    }
-    
-    /**
-     * Add items to creative tabs.
-     *
-     * @param event The creative tab contents event
-     */
-    private void addCreative(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
-            // Add void alchemy ingredients to the ingredients tab
-            event.accept(VoidAlchemyItems.VOID_ESSENCE_VIAL.get());
-            event.accept(VoidAlchemyItems.VOID_CRYSTAL.get());
+    @Override
+    protected void registerContent() {
+        // Initialize sub-components
+        fluids = new VoidAlchemyFluids(MODULE_NAME);
+        
+        // Load config values
+        enableVoidEssence = ModuleConfig.getConfig(MODULE_NAME, "enableVoidEssence").get();
+        voidPeeAmount = ModuleConfig.getConfig(MODULE_NAME, "voidPeeAmount").get();
+        
+        // Register fluids
+        if (enableVoidEssence) {
+            EldritchVoid.LOGGER.info("Registering Void Alchemy fluids");
+            registerRegistry(fluids.getFluidRegistry());
         }
+        
+        EldritchVoid.LOGGER.info("Void Alchemy content registered");
+    }
+    
+    @Override
+    protected void init(FMLCommonSetupEvent event) {
+        EldritchVoid.LOGGER.info("Initializing Void Alchemy module");
+        
+        // Register recipes and other common setup
+        
+        EldritchVoid.LOGGER.info("Void Alchemy module initialized");
+    }
+    
+    @Override
+    protected void clientInit(FMLClientSetupEvent event) {
+        EldritchVoid.LOGGER.info("Initializing Void Alchemy client");
+        
+        // Register fluid renderers
+        if (enableVoidEssence) {
+            fluids.registerRenderers();
+        }
+        
+        EldritchVoid.LOGGER.info("Void Alchemy client initialized");
     }
     
     /**
-     * Get the ID of the module.
+     * Get the fluids component.
      *
-     * @return The module ID
+     * @return The fluids component
      */
-    @Override
-    public String getId() {
-        return "voidalchemy";
+    public VoidAlchemyFluids getFluids() {
+        return fluids;
     }
     
     /**
-     * Get the display name of the module.
+     * Get the configured Void Pee amount.
      *
-     * @return The module display name
+     * @return The Void Pee amount
      */
-    @Override
-    public String getDisplayName() {
-        return "Void Alchemy";
+    public int getVoidPeeAmount() {
+        return voidPeeAmount;
     }
 }
