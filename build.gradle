@@ -36,26 +36,81 @@ task buildAllModules(type: GradleBuild) {
 }
 
 // Create a task to copy all JARs to a central location
-task collectJars(type: Copy) {
-    from project(':core').tasks.jar
-    from project(':voidalchemy').tasks.jar
-    from project(':eldritchartifacts').tasks.jar
-    from project(':obsidianforgemaster').tasks.jar
-    from project(':voidcorruption').tasks.jar
-    from project(':eldritcharcana').tasks.jar
-    from project(':obsidianconstructs').tasks.jar
-    from project(':all').tasks.jar
+task collectJars {
+    description = "Builds all module JARs and collects them in the build/libs/modules directory"
+    group = "build"
     
-    into "${buildDir}/libs/modules"
+    dependsOn buildAllModules
     
-    // Rename the JARs to have a clear naming convention
-    rename { String fileName ->
-        fileName.replace('.jar', "-${project.version}.jar")
+    doLast {
+        mkdir "${buildDir}/libs/modules"
+        
+        // Copy all module JARs to the modules directory with proper naming
+        copy {
+            from new File(project(':core').buildDir, 'libs')
+            into "${buildDir}/libs/modules"
+            rename { String fileName ->
+                "core_eldritchvoid-${project.version}.jar"
+            }
+        }
+        
+        copy {
+            from new File(project(':voidalchemy').buildDir, 'libs')
+            into "${buildDir}/libs/modules"
+            rename { String fileName ->
+                "voidalchemy_eldritchvoid-${project.version}.jar"
+            }
+        }
+        
+        copy {
+            from new File(project(':eldritchartifacts').buildDir, 'libs')
+            into "${buildDir}/libs/modules"
+            rename { String fileName ->
+                "eldritchartifacts_eldritchvoid-${project.version}.jar"
+            }
+        }
+        
+        copy {
+            from new File(project(':obsidianforgemaster').buildDir, 'libs')
+            into "${buildDir}/libs/modules"
+            rename { String fileName ->
+                "obsidianforgemaster_eldritchvoid-${project.version}.jar"
+            }
+        }
+        
+        copy {
+            from new File(project(':voidcorruption').buildDir, 'libs')
+            into "${buildDir}/libs/modules"
+            rename { String fileName ->
+                "voidcorruption_eldritchvoid-${project.version}.jar"
+            }
+        }
+        
+        copy {
+            from new File(project(':eldritcharcana').buildDir, 'libs')
+            into "${buildDir}/libs/modules"
+            rename { String fileName ->
+                "eldritcharcana_eldritchvoid-${project.version}.jar"
+            }
+        }
+        
+        copy {
+            from new File(project(':obsidianconstructs').buildDir, 'libs')
+            into "${buildDir}/libs/modules"
+            rename { String fileName ->
+                "obsidianconstructs_eldritchvoid-${project.version}.jar"
+            }
+        }
+        
+        copy {
+            from new File(project(':all').buildDir, 'libs')
+            into "${buildDir}/libs/modules"
+            rename { String fileName ->
+                "eldritch-void-all-${project.version}.jar"
+            }
+        }
     }
 }
-
-// Make collect jars depend on building all modules
-collectJars.dependsOn buildAllModules
 
 // Legacy build (single JAR)
 dependencies {

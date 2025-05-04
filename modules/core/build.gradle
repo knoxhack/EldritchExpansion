@@ -2,7 +2,7 @@
 apply from: '../../common.gradle'
 
 base {
-    archivesName = "eldritch-core"
+    archivesName = "core_eldritchvoid"
 }
 
 neoForge {
@@ -59,3 +59,21 @@ task createDirectories {
 
 copyCoreSources.dependsOn createDirectories
 copyCoreResources.dependsOn createDirectories
+
+// Configure jar task
+jar {
+    manifest {
+        attributes([
+            "Specification-Title": "Eldritch Core",
+            "Specification-Vendor": project.mod_authors,
+            "Specification-Version": "1",
+            "Implementation-Title": "Eldritch Core",
+            "Implementation-Version": project.mod_version,
+            "Implementation-Vendor": project.mod_authors,
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+    
+    // This ensures the correct jar filename format for Minecraft to recognize
+    archiveFileName = "core_eldritchvoid-${project.mod_version}.jar"
+}
