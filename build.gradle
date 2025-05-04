@@ -1,29 +1,103 @@
-// Root build script for Eldritch Void, coordinating all modules
 plugins {
-    id 'java-library'
-    id 'maven-publish'
-    id 'net.neoforged.moddev' version '2.0.78'
+    id 'eclipse'
     id 'idea'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)' apply false
 }
 
-// Set common properties
-version = mod_version
-group = mod_group_id
+apply plugin: 'java'
 
-// This is the legacy non-modular build
-// For the modular builds, see the modules/ directory
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'maven-publish'
 
-apply from: 'common.gradle'
+    version = mod_version
+    group = mod_group_id
+    
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
 
-base {
-    archivesName = mod_id
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
 }
 
-neoForge {
-    mods {
-        // define mod <-> source bindings
-        "${mod_id}" {
-            sourceSet(sourceSets.main)
+// Subprojects configuration
+subprojects {
+    apply plugin: 'net.minecraftforge.gradle'
+    
+    minecraft {
+        mappings channel: mappings_channel, version: mappings_version
+        
+        accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+        
+        runs {
+            client {
+                workingDirectory project.file('run')
+                property 'forge.logging.markers', 'REGISTRIES'
+                property 'forge.logging.console.level', 'debug'
+                
+                mods {
+                    "${mod_id}" {
+                        source sourceSets.main
+                    }
+                }
+            }
+            
+            server {
+                workingDirectory project.file('run')
+                property 'forge.logging.markers', 'REGISTRIES'
+                property 'forge.logging.console.level', 'debug'
+                
+                mods {
+                    "${mod_id}" {
+                        source sourceSets.main
+                    }
+                }
+            }
+            
+            data {
+                workingDirectory project.file('run')
+                property 'forge.logging.markers', 'REGISTRIES'
+                property 'forge.logging.console.level', 'debug'
+                args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+                
+                mods {
+                    "${mod_id}" {
+                        source sourceSets.main
+                    }
+                }
+            }
+        }
+    }
+    
+    // Common dependencies for all modules
+    dependencies {
+        minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+        
+        // JEI - Just Enough Items (optional helper dependency)
+        compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}:api"))
+        runtimeOnly(fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}"))
+        
+        // For mixin annotation processor
+        annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    }
+    
+    // Basic Manifest setup
+    jar {
+        manifest {
+            attributes([
+                "Specification-Title"     : project.mod_name,
+                "Specification-Vendor"    : project.mod_authors,
+                "Specification-Version"   : "1",
+                "Implementation-Title"    : project.mod_name,
+                "Implementation-Version"  : project.mod_version,
+                "Implementation-Vendor"   : project.mod_authors,
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+            ])
         }
     }
 }
@@ -35,122 +109,29 @@ task buildAllModules(type: GradleBuild) {
              ':obsidianconstructs:build', ':all:build']
 }
 
-// Create a task to copy all JARs to a central location
-task collectJars {
-    description = "Builds all module JARs and collects them in the build/libs/modules directory"
+// Task to collect all module JARs
+task collectModuleJars(type: Copy) {
+    description = "Collects all module JARs into a single directory"
     group = "build"
     
     dependsOn buildAllModules
     
-    doLast {
-        mkdir "${buildDir}/libs/modules"
-        
-        // Copy all module JARs to the modules directory with proper naming
-        copy {
-            from new File(project(':core').buildDir, 'libs')
-            into "${buildDir}/libs/modules"
-            rename { String fileName ->
-                "core_eldritchvoid-${project.version}.jar"
-            }
-        }
-        
-        copy {
-            from new File(project(':voidalchemy').buildDir, 'libs')
-            into "${buildDir}/libs/modules"
-            rename { String fileName ->
-                "voidalchemy_eldritchvoid-${project.version}.jar"
-            }
-        }
-        
-        copy {
-            from new File(project(':eldritchartifacts').buildDir, 'libs')
-            into "${buildDir}/libs/modules"
-            rename { String fileName ->
-                "eldritchartifacts_eldritchvoid-${project.version}.jar"
-            }
-        }
-        
-        copy {
-            from new File(project(':obsidianforgemaster').buildDir, 'libs')
-            into "${buildDir}/libs/modules"
-            rename { String fileName ->
-                "obsidianforgemaster_eldritchvoid-${project.version}.jar"
-            }
-        }
-        
-        copy {
-            from new File(project(':voidcorruption').buildDir, 'libs')
-            into "${buildDir}/libs/modules"
-            rename { String fileName ->
-                "voidcorruption_eldritchvoid-${project.version}.jar"
-            }
-        }
-        
-        copy {
-            from new File(project(':eldritcharcana').buildDir, 'libs')
-            into "${buildDir}/libs/modules"
-            rename { String fileName ->
-                "eldritcharcana_eldritchvoid-${project.version}.jar"
-            }
-        }
-        
-        copy {
-            from new File(project(':obsidianconstructs').buildDir, 'libs')
-            into "${buildDir}/libs/modules"
-            rename { String fileName ->
-                "obsidianconstructs_eldritchvoid-${project.version}.jar"
-            }
-        }
-        
-        copy {
-            from new File(project(':all').buildDir, 'libs')
-            into "${buildDir}/libs/modules"
-            rename { String fileName ->
-                "eldritch-void-all-${project.version}.jar"
-            }
-        }
+    from(project(':core').tasks.jar)
+    from(project(':voidalchemy').tasks.jar)
+    from(project(':eldritchartifacts').tasks.jar)
+    from(project(':obsidianforgemaster').tasks.jar)
+    from(project(':voidcorruption').tasks.jar)
+    from(project(':eldritcharcana').tasks.jar)
+    from(project(':obsidianconstructs').tasks.jar)
+    from(project(':all').tasks.jar)
+    
+    into "${buildDir}/libs/modules"
+    
+    rename { String fileName ->
+        def moduleName = fileName.split('-')[0]
+        "${moduleName}_${mod_id}-${version}.jar"
     }
 }
 
-// Legacy build (single JAR)
-dependencies {
-    // Legacy dependencies (for the non-modular build)
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
-}
-
-// Example for how to get properties into the manifest for reading at runtime.
-jar {
-    manifest {
-        attributes([
-            "Specification-Title": project.mod_name,
-            "Specification-Vendor": project.mod_authors,
-            "Specification-Version": "1",
-            "Implementation-Title": project.mod_name,
-            "Implementation-Version": project.mod_version,
-            "Implementation-Vendor": project.mod_authors,
-            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
-        ])
-    }
-}
-
-// Publishing to a Maven repository is configured like this.
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifact jar
-        }
-    }
-    repositories {
-        maven {
-            url "file://${project.projectDir}/mcmodsrepo"
-        }
-    }
-}
-
-// Configure IDE compatibility
-idea {
-    module {
-        downloadSources = true
-        downloadJavadoc = true
-    }
-}
+// Default build task will build and collect all module JARs
+build.finalizedBy collectModuleJars
