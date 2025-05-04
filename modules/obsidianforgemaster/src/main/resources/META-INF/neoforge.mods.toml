@@ -1,0 +1,43 @@
+# NeoForge mods.toml file for Obsidian Forgemaster module
+# Documentation: https://neoforged.net/docs/configuration/mods.toml/
+
+modLoader="javafml"
+loaderVersion="[7,)"
+license="MIT"
+issueTrackerURL="https://github.com/yourusername/eldritchvoid/issues"
+
+[[mods]]
+modId="eldritchvoid_obsidianforgemaster"
+version="${file.jarVersion}"
+displayName="Eldritch Void - Obsidian Forgemaster"
+updateJSONURL="https://example.com/updates.json"
+displayURL="https://example.com/eldritchvoid"
+logoFile="logo.png"
+credits="Thanks to all contributors and the NeoForge team"
+authors="Your Name"
+description='''
+The Obsidian Forgemaster module for Eldritch Void.
+
+Features crafting, smithing, and forging mechanisms focused on obsidian materials.
+'''
+
+[[dependencies.eldritchvoid_obsidianforgemaster]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.21.5,1.22)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.eldritchvoid_obsidianforgemaster]]
+    modId="neoforge"
+    mandatory=true
+    versionRange="[21.5.0,22.0.0)"
+    ordering="NONE"
+    side="BOTH"
+    
+[[dependencies.eldritchvoid_obsidianforgemaster]]
+    modId="eldritchvoid"
+    mandatory=true
+    versionRange="[0.1.0,)"
+    ordering="AFTER"
+    side="BOTH"
