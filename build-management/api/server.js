@@ -11,6 +11,20 @@ const axios = require('axios');
 const app = express();
 const PORT = 5001;
 
+// Function to handle relative API paths
+const handleAPIWithRelativePaths = (req, res, next) => {
+  if (req.url.startsWith('/api/')) {
+    // Already has /api/ prefix, leave as is
+    next();
+  } else if (req.url === '/') {
+    // Root path, serve index.html or similar
+    next();
+  } else {
+    // Handle other paths
+    next();
+  }
+};
+
 // Enable CORS
 app.use(cors());
 
@@ -658,6 +672,17 @@ app.post('/api/gradle/update-version', (req, res) => {
 });
 
 // Start the server
+// Static file serving
+app.use(express.static(path.resolve(__dirname, '../build')));
+
+// API proxy handling for all API routes
+app.use(handleAPIWithRelativePaths);
+
+// Serve React app for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../build', 'index.html'));
+});
+
 app.listen(PORT, () => {
   console.log(`API server running on port ${PORT}`);
 });

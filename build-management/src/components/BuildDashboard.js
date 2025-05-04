@@ -31,7 +31,7 @@ const BuildDashboard = ({
   useEffect(() => {
     const fetchVersion = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/api/version');
+        const response = await axios.get('/api/version');
         setVersionInfo(response.data);
       } catch (error) {
         console.error('Error fetching version:', error);
@@ -77,7 +77,7 @@ const BuildDashboard = ({
       // Assuming the latest successful build has ID 1 for this demo
       const buildId = 1;
       
-      const response = await axios.post('http://localhost:5001/api/github/release', {
+      const response = await axios.post('/api/github/release', {
         buildId,
         releaseNotes,
         isPrerelease
