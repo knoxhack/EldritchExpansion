@@ -658,14 +658,15 @@ app.post('/api/gradle/update-version', (req, res) => {
 });
 
 // Start the server
-// Static file serving
-app.use(express.static(path.resolve(__dirname, '../build')));
+// This is development mode, so we don't need to serve static files from the build directory
+// The React dev server is serving those files directly
 
 // No middleware needed for API proxying
 
-// Serve React app for all other routes
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../build', 'index.html'));
+// In development mode, React dev server handles these routes
+// These routes are here just for documentation
+app.get('/', (req, res) => {
+  res.json({ message: 'API server is running' });
 });
 
 // Setup a route to handle WebSocket connections
