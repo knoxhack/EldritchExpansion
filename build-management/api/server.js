@@ -11,19 +11,7 @@ const axios = require('axios');
 const app = express();
 const PORT = 5001;
 
-// Function to handle relative API paths
-const handleAPIWithRelativePaths = (req, res, next) => {
-  if (req.url.startsWith('/api/')) {
-    // Already has /api/ prefix, leave as is
-    next();
-  } else if (req.url === '/') {
-    // Root path, serve index.html or similar
-    next();
-  } else {
-    // Handle other paths
-    next();
-  }
-};
+// No need for a complex middleware - Express handles paths natively
 
 // Enable CORS
 app.use(cors());
@@ -45,10 +33,8 @@ let currentVersion = {
   lastRelease: null
 };
 
-// Create WebSocket server on a different port to avoid conflict with the HTTP server
-const WS_PORT = 5002;
-const wss = new WebSocket.Server({ port: WS_PORT });
-console.log(`WebSocket server running on port ${WS_PORT}`);
+// Create WebSocket server that will be upgraded from HTTP server
+const wss = new WebSocket.Server({ noServer: true });
 
 // Handle WebSocket connections
 wss.on('connection', (ws) => {
@@ -675,14 +661,33 @@ app.post('/api/gradle/update-version', (req, res) => {
 // Static file serving
 app.use(express.static(path.resolve(__dirname, '../build')));
 
-// API proxy handling for all API routes
-app.use(handleAPIWithRelativePaths);
+// No middleware needed for API proxying
 
 // Serve React app for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../build', 'index.html'));
 });
 
-app.listen(PORT, () => {
+// Setup a route to handle WebSocket connections
+app.get('/ws', (req, res) => {
+  res.send('WebSocket endpoint');
+});
+
+// Start HTTP server
+const server = app.listen(PORT, () => {
   console.log(`API server running on port ${PORT}`);
+});
+
+// Handle WebSocket upgrade requests
+server.on('upgrade', (request, socket, head) => {
+  // Simple pathname extraction without using URL constructor
+  const pathname = request.url ? request.url.split('?')[0] : '';
+  
+  if (pathname === '/ws') {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
 });

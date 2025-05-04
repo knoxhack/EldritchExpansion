@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5001/api';
+const API_URL = '/api';
 
 // WebSocket connection
 let socket = null;
@@ -12,7 +12,10 @@ export const initWebSocket = () => {
     socket.close();
   }
   
-  socket = new WebSocket('ws://localhost:5002');
+  // Use current host with WS protocol
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = window.location.host;
+  socket = new WebSocket(`${protocol}//${host}/ws`);
   
   socket.onopen = () => {
     console.log('WebSocket connection established');
