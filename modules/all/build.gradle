@@ -2,14 +2,13 @@
 apply from: '../../common.gradle'
 
 base {
-    archivesName = "eldritch-void-all"
+    archivesName = "all_eldritchvoid"
 }
 
 neoForge {
     mods {
         "eldritchvoid" {
             sourceSet(sourceSets.main)
-            displayName = "Eldritch Void - Complete"
         }
     }
 }
@@ -58,6 +57,9 @@ jar {
     
     // Avoid potential duplicate file entries
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    // This ensures the correct jar filename format for Minecraft to recognize
+    archiveFileName = "all_eldritchvoid-${project.mod_version}.jar"
 }
 
 // Create a special neoforge.mods.toml for the all-in-one jar

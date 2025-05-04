@@ -9,7 +9,6 @@ neoForge {
     mods {
         "eldritchvoid" {
             sourceSet(sourceSets.main)
-            displayName = "Eldritch Core"
         }
     }
 }
