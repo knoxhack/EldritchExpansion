@@ -2,7 +2,7 @@
 # Documentation: https://neoforged.net/docs/configuration/mods.toml/
 
 modLoader="javafml"
-loaderVersion="[21,)"
+loaderVersion="[7,)"
 license="MIT"
 issueTrackerURL="https://github.com/yourusername/eldritchvoid/issues"
 
