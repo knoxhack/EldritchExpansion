@@ -1,119 +1,132 @@
 package com.eldritchvoid;
 
-import com.eldritchvoid.core.ModuleManager;
-import com.eldritchvoid.core.capability.ElderCapability;
-import com.eldritchvoid.core.data.ModuleDataProvider;
-import com.eldritchvoid.core.documentation.ModuleDocs;
-import com.eldritchvoid.core.network.ModuleNetwork;
-import com.eldritchvoid.core.registry.Registration;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.common.ModConfigSpec;
-import net.neoforged.neoforge.data.event.GatherDataEvent;
+import com.eldritchvoid.core.ModuleRegistry;
+import com.eldritchvoid.core.module.*;
+import com.eldritchvoid.init.ItemInit;
+import com.eldritchvoid.init.BlockInit;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * Main class for the Eldritch Void mod.
- * Initializes all systems and modules.
+ * Main mod class for Eldritch Void
+ * Manages modules and initialization
  */
-@Mod(EldritchVoid.MOD_ID)
+@Mod(EldritchVoid.MODID)
 public class EldritchVoid {
-    /**
-     * The mod ID.
-     */
-    public static final String MOD_ID = "eldritchvoid";
-    
-    /**
-     * The mod logger.
-     */
+    public static final String MODID = "eldritchvoid";
     public static final Logger LOGGER = LoggerFactory.getLogger("EldritchVoid");
     
-    /**
-     * Map to store config specs for registration.
-     * This is used by the ModuleConfig system for NeoForge 1.21.5 compatibility.
-     */
-    public static final Map<String, ModConfigSpec> CONFIG_SPECS = new HashMap<>();
+    // Creative tab registry
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
     
-    private static ModuleManager moduleManager;
+    // Create a creative tab for all mod items
+    public static final RegistryObject<CreativeModeTab> ELDRITCH_TAB = CREATIVE_TABS.register("eldritch_tab",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.eldritchvoid"))
+                    .icon(() -> ItemInit.VOID_ESSENCE.get().getDefaultInstance())
+                    .displayItems((parameters, output) -> {
+                        // Add core items
+                        output.accept(ItemInit.VOID_ESSENCE.get());
+                        output.accept(ItemInit.ELDRITCH_CRYSTAL.get());
+                        output.accept(ItemInit.OBSIDIAN_SHARD.get());
+                        
+                        // Add blocks
+                        output.accept(BlockInit.VOID_ALTAR.get());
+                        output.accept(BlockInit.ELDRITCH_PEDESTAL.get());
+                        output.accept(BlockInit.OBSIDIAN_FORGE.get());
+                    })
+                    .build());
     
-    /**
-     * Create the mod instance.
-     */
-    public EldritchVoid(IEventBus modEventBus) {
-        LOGGER.info("Initializing Eldritch Void Mod");
+    // Module registry to manage all modules
+    private static ModuleRegistry moduleRegistry;
+    
+    public EldritchVoid() {
+        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         
-        // Initialize registration system
-        Registration.init();
+        // Register deferred registries
+        CREATIVE_TABS.register(modEventBus);
+        ItemInit.ITEMS.register(modEventBus);
+        BlockInit.BLOCKS.register(modEventBus);
         
-        // Initialize network system
-        ModuleNetwork.init();
+        // Initialize module registry
+        moduleRegistry = new ModuleRegistry();
         
-        // Initialize module manager
-        moduleManager = new ModuleManager(modEventBus);
+        // Register modules
+        moduleRegistry.registerModule(new CoreModule());
+        moduleRegistry.registerModule(new VoidAlchemyModule());
+        moduleRegistry.registerModule(new EldritchArtifactsModule());
+        moduleRegistry.registerModule(new ObsidianForgemasterModule());
+        moduleRegistry.registerModule(new VoidCorruptionModule());
+        moduleRegistry.registerModule(new EldritchArcanaModule());
+        moduleRegistry.registerModule(new ObsidianConstructsModule());
         
-        // Register event handlers
-        modEventBus.addListener(this::onRegisterCapabilities);
-        modEventBus.addListener(this::onGatherData);
+        // Register event listeners
+        modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(this::addCreative);
         
-        // Initialize modules here
-        initializeModules(modEventBus);
+        // Register ourselves for server and other game events
+        MinecraftForge.EVENT_BUS.register(this);
         
-        // Load documentation
-        ModuleDocs.loadDocs();
+        LOGGER.info("Eldritch Void initialized");
+    }
+    
+    private void commonSetup(final FMLCommonSetupEvent event) {
+        // Common setup code
+        LOGGER.info("Common setup complete");
         
-        LOGGER.info("Eldritch Void Mod initialized");
+        // Initialize all modules
+        moduleRegistry.initializeAll(event);
+    }
+    
+    private void addCreative(BuildCreativeModeTabContentsEvent event) {
+        // Add items to vanilla tabs if needed
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
+            event.accept(ItemInit.VOID_ESSENCE);
+            event.accept(ItemInit.ELDRITCH_CRYSTAL);
+            event.accept(ItemInit.OBSIDIAN_SHARD);
+        }
+    }
+    
+    // You can use SubscribeEvent and let the Event Bus discover methods to call
+    @SubscribeEvent
+    public void onServerStarting(ServerStartingEvent event) {
+        // Server starting code
+        LOGGER.info("Server starting");
+    }
+    
+    // You can use EventBusSubscriber to automatically register all static methods in the class
+    @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    public static class ClientModEvents {
+        @SubscribeEvent
+        public static void onClientSetup(FMLClientSetupEvent event) {
+            // Client setup code
+            LOGGER.info("Client setup complete");
+        }
     }
     
     /**
-     * Initialize all modules.
-     * 
-     * @param modEventBus The mod event bus
+     * Get the module registry
+     * @return The module registry
      */
-    private void initializeModules(IEventBus modEventBus) {
-        // Register modules here
-        moduleManager.registerModule(new com.eldritchvoid.modules.voidalchemy.VoidAlchemyModule(modEventBus));
-        moduleManager.registerModule(new com.eldritchvoid.modules.eldritchartifacts.EldritchArtifactsModule(modEventBus));
-        moduleManager.registerModule(new com.eldritchvoid.modules.obsidianforgemaster.ObsidianForgemasterModule(modEventBus));
-        moduleManager.registerModule(new com.eldritchvoid.modules.voidcorruption.VoidCorruptionModule(modEventBus));
-        moduleManager.registerModule(new com.eldritchvoid.modules.eldritcharcana.EldritchArcanaModule(modEventBus));
-        moduleManager.registerModule(new com.eldritchvoid.modules.obsidianconstructs.ObsidianConstructsModule(modEventBus));
-        
-        // Initialize all registered modules
-        moduleManager.initializeModules();
-    }
-    
-    /**
-     * Handle the register capabilities event.
-     *
-     * @param event The register capabilities event
-     */
-    private void onRegisterCapabilities(RegisterCapabilitiesEvent event) {
-        ElderCapability.registerCapabilities(event);
-        LOGGER.info("Registered capabilities");
-    }
-    
-    /**
-     * Handle the gather data event.
-     *
-     * @param event The gather data event
-     */
-    private void onGatherData(GatherDataEvent event) {
-        ModuleDataProvider.registerAll(event);
-        LOGGER.info("Registered data providers");
-    }
-    
-    /**
-     * Get the module manager.
-     *
-     * @return The module manager
-     */
-    public static ModuleManager getModuleManager() {
-        return moduleManager;
+    public static ModuleRegistry getModuleRegistry() {
+        return moduleRegistry;
     }
 }
