@@ -2,7 +2,7 @@
 apply from: '../../common.gradle'
 
 base {
-    archivesName = "artifacts_eldritchvoid"
+    archivesName = "eldritchartifacts_eldritchvoid"
 }
 
 neoForge {
@@ -72,5 +72,5 @@ jar {
     }
     
     // This ensures the correct jar filename format for Minecraft to recognize
-    archiveFileName = "artifacts_eldritchvoid-${project.mod_version}.jar"
+    archiveFileName = "eldritchartifacts_eldritchvoid-${project.mod_version}.jar"
 }
