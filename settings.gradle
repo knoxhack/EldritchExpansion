@@ -11,3 +11,23 @@ plugins {
 }
 
 rootProject.name = 'EldritchVoid'
+
+// Define all subprojects
+include 'core'
+include 'voidalchemy'
+include 'eldritchartifacts'
+include 'obsidianforgemaster'
+include 'voidcorruption'
+include 'eldritcharcana'
+include 'obsidianconstructs'
+include 'all'
+
+// Configure project paths
+project(':core').projectDir = file('modules/core')
+project(':voidalchemy').projectDir = file('modules/voidalchemy')
+project(':eldritchartifacts').projectDir = file('modules/eldritchartifacts')
+project(':obsidianforgemaster').projectDir = file('modules/obsidianforgemaster')
+project(':voidcorruption').projectDir = file('modules/voidcorruption')
+project(':eldritcharcana').projectDir = file('modules/eldritcharcana')
+project(':obsidianconstructs').projectDir = file('modules/obsidianconstructs')
+project(':all').projectDir = file('modules/all')

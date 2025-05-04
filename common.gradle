@@ -1,0 +1,129 @@
+// Common configuration for all Eldritch Void modules
+// This file is applied to all module subprojects
+
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+apply plugin: 'net.neoforged.moddev'
+apply plugin: 'idea'
+
+version = mod_version
+group = mod_group_id
+
+repositories {
+    mavenLocal()
+    // Official NeoForged repositories
+    maven { url = 'https://maven.neoforged.net/releases' }
+    maven { url = 'https://maven.neoforged.net/snapshots' }
+    
+    // JEI Maven for dependency - will be used once JEI is updated for 1.21.5
+    maven { 
+        name = "JEI Maven"
+        url = "https://maven.blamejared.com" 
+    }
+    
+    // For potential other dependencies
+    mavenCentral()
+}
+
+// Mojang ships Java 21 to end users starting in 1.20.5, so mods should target Java 21.
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+// Apply NeoForge configuration for all modules
+neoForge {
+    // Specify the version of NeoForge to use.
+    version = project.neo_version
+
+    parchment {
+        mappingsVersion = project.parchment_mappings_version
+        minecraftVersion = project.parchment_minecraft_version
+    }
+
+    // Default run configurations.
+    runs {
+        client {
+            client()
+
+            // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            
+            // Mixin config
+            programArgument "--mixin.config=${mod_id}.mixins.json"
+        }
+
+        server {
+            server()
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            
+            // Mixin config
+            programArgument "--mixin.config=${mod_id}.mixins.json"
+        }
+
+        // This run config launches GameTestServer and runs all registered gametests, then exits.
+        gameTestServer {
+            type = "gameTestServer"
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        data {
+            data()
+
+            // Specify the modid for data generation
+            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+            
+            // Mixin config
+            programArgument "--mixin.config=${mod_id}.mixins.json"
+        }
+
+        // applies to all the run configs above
+        configureEach {
+            // Recommended logging data for a userdev environment
+            systemProperty 'neoforge.logging.markers', 'REGISTRIES'
+
+            // Recommended logging level for the console
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+}
+
+dependencies {
+    // Annotation processor for mixin
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+// Example for how to get properties into the manifest for reading at runtime.
+jar {
+    manifest {
+        attributes([
+            "Specification-Title": project.mod_name,
+            "Specification-Vendor": project.mod_authors,
+            "Specification-Version": "1",
+            "Implementation-Title": project.mod_name,
+            "Implementation-Version": project.mod_version,
+            "Implementation-Vendor": project.mod_authors,
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+// Publishing to a Maven repository is configured like this.
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/mcmodsrepo"
+        }
+    }
+}
+
+// Configure IDE compatibility
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
