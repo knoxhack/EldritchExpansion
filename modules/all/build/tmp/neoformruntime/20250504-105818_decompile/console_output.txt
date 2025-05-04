@@ -1,0 +1,25 @@
+--------------------------------------------------------------------------------
+
+Command-Line:
+ - /nix/store/2vwkssqpzykk37r996cafq7x63imf4sp-openjdk-21+35/lib/openjdk/bin/java
+ - -Xmx4G
+ - -jar
+ - /home/runner/.gradle/caches/modules-2/files-2.1/org.vineflower/vineflower/1.11.1/77767cdbc76d116c6d5e1565ec387e531085b9f4/vineflower-1.11.1.jar
+ - --decompile-inner
+ - --remove-bridge
+ - --decompile-generics
+ - --ascii-strings
+ - --remove-synthetic
+ - --include-classpath
+ - --variable-renaming=jad
+ - --ignore-invalid-bytecode
+ - --bytecode-source-mapping
+ - --dump-code-lines
+ - --indent-string=    
+ - --log-level=WARN
+ - -cfg
+ - /home/runner/.gradle/caches/neoformruntime/intermediate_results/listLibraries_5a47a7b04d14d2b6d1e98b789acbab492c5b578f_output.txt
+ - /home/runner/.gradle/caches/neoformruntime/intermediate_results/rename_2a69d6e7185d42bb344e19b4b6aec87017a08dce_output.jar
+ - ./output.jar
+--------------------------------------------------------------------------------
+

@@ -18,7 +18,7 @@ authors="Your Name"
 description='''
 The Obsidian Forgemaster module for Eldritch Void.
 
-Features crafting, smithing, and forging mechanisms focused on obsidian materials.
+Allows players to create and customize obsidian-based tools, weapons, and armor with unique properties.
 '''
 
 [[dependencies.eldritchvoid_obsidianforgemaster]]
