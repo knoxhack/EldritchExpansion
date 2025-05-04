@@ -2,14 +2,13 @@
 apply from: '../../common.gradle'
 
 base {
-    archivesName = "eldritch-arcana"
+    archivesName = "eldritcharcana_eldritchvoid"
 }
 
 neoForge {
     mods {
         "eldritchvoid_eldritcharcana" {
             sourceSet(sourceSets.main)
-            displayName = "Eldritch Void - Eldritch Arcana"
         }
     }
 }
@@ -57,3 +56,21 @@ task createDirectories {
 
 copyModuleSources.dependsOn createDirectories
 copyModuleResources.dependsOn createDirectories
+
+// Configure jar task for proper Minecraft mod naming
+jar {
+    manifest {
+        attributes([
+            "Specification-Title": "Eldritch Void - Eldritch Arcana",
+            "Specification-Vendor": project.mod_authors,
+            "Specification-Version": "1",
+            "Implementation-Title": "Eldritch Void - Eldritch Arcana",
+            "Implementation-Version": project.mod_version,
+            "Implementation-Vendor": project.mod_authors,
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+    
+    // This ensures the correct jar filename format for Minecraft to recognize
+    archiveFileName = "eldritcharcana_eldritchvoid-${project.mod_version}.jar"
+}
